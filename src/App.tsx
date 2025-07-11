@@ -17,6 +17,8 @@ import LeadMagnets from "./pages/LeadMagnets";
 import YouTubeVlogs from "./pages/YouTubeVlogs";
 import LinkedIn from "./pages/LinkedIn";
 import Newsletters from "./pages/Newsletters";
+import TeamManagement from "./pages/TeamManagement";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,8 +53,8 @@ function ProtectedRoutes() {
           <Route path="newsletters" element={<Newsletters />} />
           <Route path="lead-magnets" element={<LeadMagnets />} />
           <Route path="analytics" element={<Analytics />} />
-          <Route path="team" element={<div className="text-center py-12 text-muted-foreground">Team Management - Coming Soon</div>} />
-          <Route path="settings" element={<div className="text-center py-12 text-muted-foreground">Settings - Coming Soon</div>} />
+          <Route path="team" element={<TeamManagement />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
