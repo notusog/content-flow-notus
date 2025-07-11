@@ -23,7 +23,8 @@ import {
   Target,
   Youtube,
   Mail,
-  Download
+  Download,
+  LinkedinIcon
 } from 'lucide-react';
 
 interface NavItem {
@@ -69,6 +70,12 @@ const navigationItems: NavItem[] = [
     title: 'YouTube Vlogs',
     url: '/vlogs',
     icon: Youtube,
+    permissions: ['content:create', 'content:view', 'admin:all']
+  },
+  {
+    title: 'LinkedIn',
+    url: '/linkedin',
+    icon: LinkedinIcon,
     permissions: ['content:create', 'content:view', 'admin:all']
   },
   {

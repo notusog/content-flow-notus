@@ -15,6 +15,7 @@ import MultiChannelHub from "./pages/MultiChannelHub";
 import Analytics from "./pages/Analytics";
 import LeadMagnets from "./pages/LeadMagnets";
 import YouTubeVlogs from "./pages/YouTubeVlogs";
+import LinkedIn from "./pages/LinkedIn";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ function ProtectedRoutes() {
           <Route path="pipeline" element={<PipelineGenerator />} />
           <Route path="channels" element={<MultiChannelHub />} />
           <Route path="vlogs" element={<YouTubeVlogs />} />
+          <Route path="linkedin" element={<LinkedIn />} />
           <Route path="newsletters" element={<div className="text-center py-12 text-muted-foreground">Newsletters - Coming Soon</div>} />
           <Route path="lead-magnets" element={<LeadMagnets />} />
           <Route path="analytics" element={<Analytics />} />
