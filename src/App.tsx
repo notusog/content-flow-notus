@@ -13,6 +13,7 @@ import InsightExtractor from "./pages/InsightExtractor";
 import PipelineGenerator from "./pages/PipelineGenerator";
 import MultiChannelHub from "./pages/MultiChannelHub";
 import Analytics from "./pages/Analytics";
+import LeadMagnets from "./pages/LeadMagnets";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,7 +45,7 @@ function ProtectedRoutes() {
           <Route path="channels" element={<MultiChannelHub />} />
           <Route path="vlogs" element={<div className="text-center py-12 text-muted-foreground">YouTube Vlogs - Coming Soon</div>} />
           <Route path="newsletters" element={<div className="text-center py-12 text-muted-foreground">Newsletters - Coming Soon</div>} />
-          <Route path="lead-magnets" element={<div className="text-center py-12 text-muted-foreground">Lead Magnets - Coming Soon</div>} />
+          <Route path="lead-magnets" element={<LeadMagnets />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="team" element={<div className="text-center py-12 text-muted-foreground">Team Management - Coming Soon</div>} />
           <Route path="settings" element={<div className="text-center py-12 text-muted-foreground">Settings - Coming Soon</div>} />
