@@ -101,10 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Check role-specific permissions
     const rolePermissions = {
-      strategist: ['content:create', 'content:edit', 'content:schedule', 'ai:draft', 'insights:extract'],
+      strategist: ['content:create', 'content:edit', 'content:schedule', 'ai:draft', 'insights:extract', 'content:view'],
       client: ['content:view', 'content:approve', 'content:comment', 'reports:view'],
-      gtm: ['leads:view', 'tasks:complete', 'pipeline:access'],
-      leadership: ['admin:all', 'reports:export', 'users:manage', 'modules:toggle']
+      gtm: ['leads:view', 'tasks:complete', 'pipeline:access', 'content:schedule', 'content:view', 'reports:view'],
+      leadership: ['admin:all', 'reports:export', 'users:manage', 'modules:toggle', 'content:create', 'content:view', 'content:edit']
     };
 
     return rolePermissions[authState.user.role]?.includes(permission) || false;

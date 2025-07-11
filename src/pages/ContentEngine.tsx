@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
 import { 
   Plus, 
-  Calendar,
+  Calendar as CalendarIcon,
   Filter,
   MoreHorizontal,
   FileText,
@@ -17,8 +18,11 @@ import {
   Eye,
   CheckCircle,
   Clock,
-  Edit
+  Edit,
+  Sparkles
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { ContentBriefDialog, AIGenerationDialog } from '@/components/forms/ContentForms';
 
 type ContentStatus = 'idea' | 'draft' | 'review' | 'approved' | 'scheduled' | 'published';
 type ContentChannel = 'linkedin' | 'newsletter' | 'youtube' | 'lead-magnet';
@@ -97,6 +101,9 @@ export default function ContentEngine() {
   const { user, hasPermission } = useAuth();
   const [selectedStatus, setSelectedStatus] = useState<ContentStatus | 'all'>('all');
   const [selectedChannel, setSelectedChannel] = useState<ContentChannel | 'all'>('all');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isBriefDialogOpen, setIsBriefDialogOpen] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
 
   const filteredContent = sampleContent.filter(content => {
     if (selectedStatus !== 'all' && content.status !== selectedStatus) return false;
@@ -120,10 +127,16 @@ export default function ContentEngine() {
           </p>
         </div>
         {canCreateContent && (
-          <Button className="smooth-transition">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Content
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setIsBriefDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Brief
+            </Button>
+            <Button onClick={() => setIsAIDialogOpen(true)} variant="outline" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Generate
+            </Button>
+          </div>
         )}
       </div>
 
@@ -258,10 +271,50 @@ export default function ContentEngine() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Calendar view coming soon</p>
-                <p className="text-sm">Drag-and-drop scheduling for multi-channel content</p>
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="md:col-span-2">
+                  <CardContent className="p-4">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      className="rounded-md border w-full"
+                    />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">
+                      {selectedDate ? format(selectedDate, "MMMM dd, yyyy") : "Today's"} Schedule
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">9:00 AM</p>
+                        <p className="text-xs text-muted-foreground truncate">LinkedIn post - AI trends</p>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-800">LinkedIn</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">2:00 PM</p>
+                        <p className="text-xs text-muted-foreground truncate">Twitter thread - productivity tips</p>
+                      </div>
+                      <Badge className="bg-sky-100 text-sky-800">Twitter</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">6:00 PM</p>
+                        <p className="text-xs text-muted-foreground truncate">Instagram story - behind the scenes</p>
+                      </div>
+                      <Badge className="bg-pink-100 text-pink-800">Instagram</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
@@ -304,6 +357,16 @@ export default function ContentEngine() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      <ContentBriefDialog 
+        isOpen={isBriefDialogOpen} 
+        onClose={() => setIsBriefDialogOpen(false)} 
+      />
+      <AIGenerationDialog 
+        isOpen={isAIDialogOpen} 
+        onClose={() => setIsAIDialogOpen(false)} 
+      />
     </div>
   );
 }
