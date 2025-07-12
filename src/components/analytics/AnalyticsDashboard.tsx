@@ -20,7 +20,10 @@ import {
   Target,
   RefreshCw,
   ExternalLink,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Calendar,
+  Activity,
+  Zap
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -39,10 +42,18 @@ interface AnalyticsReport {
   data_source: string;
 }
 
+interface ChartDataPoint {
+  date: string;
+  reach: number;
+  engagement: number;
+  platform: string;
+}
+
 export default function AnalyticsDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('30');
   const [analyticsReports, setAnalyticsReports] = useState<AnalyticsReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalReach: 0,
     engagement: 0,
@@ -53,6 +64,119 @@ export default function AnalyticsDashboard() {
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const { toast } = useToast();
+
+  const processCSVDataForCharts = (reports: AnalyticsReport[]) => {
+    const processedData: ChartDataPoint[] = [];
+    
+    reports.forEach(report => {
+      const csvData = Array.isArray(report.csv_data) ? report.csv_data : [];
+      
+      csvData.forEach((row: any) => {
+        let reach = 0;
+        let engagement = 0;
+        let date = row.Date || row.date || new Date().toISOString().split('T')[0];
+        
+        // Process based on platform
+        if (report.report_type === 'linkedin') {
+          reach = parseInt(row.Impressions || row.impressions || '0');
+          engagement = (parseInt(row.Reactions || row.reactions || '0') + 
+                      parseInt(row.Comments || row.comments || '0') + 
+                      parseInt(row.Shares || row.shares || '0'));
+        } else if (report.report_type === 'youtube') {
+          reach = parseInt(row.Views || row.views || '0');
+          engagement = (parseInt(row.Likes || row.likes || '0') + 
+                      parseInt(row.Comments || row.comments || '0'));
+        } else if (report.report_type === 'newsletter') {
+          reach = parseInt(row.Opens || row.opens || '0');
+          engagement = parseInt(row.Clicks || row.clicks || '0');
+        }
+
+        if (reach > 0 || engagement > 0) {
+          processedData.push({
+            date,
+            reach,
+            engagement,
+            platform: report.report_type
+          });
+        }
+      });
+    });
+
+    return processedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  };
+
+  const getTopPerformingContent = (reports: AnalyticsReport[]) => {
+    const content: any[] = [];
+    
+    reports.forEach(report => {
+      const csvData = Array.isArray(report.csv_data) ? report.csv_data : [];
+      
+      csvData.forEach((row: any, index: number) => {
+        let reach = 0;
+        let engagement = 0;
+        let title = row.Title || row.title || row['Post URL'] || row['Video Title'] || row['Subject Line'] || `Content ${index + 1}`;
+        
+        if (report.report_type === 'linkedin') {
+          reach = parseInt(row.Impressions || row.impressions || '0');
+          engagement = (parseInt(row.Reactions || row.reactions || '0') + 
+                      parseInt(row.Comments || row.comments || '0') + 
+                      parseInt(row.Shares || row.shares || '0'));
+        } else if (report.report_type === 'youtube') {
+          reach = parseInt(row.Views || row.views || '0');
+          engagement = (parseInt(row.Likes || row.likes || '0') + 
+                      parseInt(row.Comments || row.comments || '0'));
+        } else if (report.report_type === 'newsletter') {
+          reach = parseInt(row.Opens || row.opens || '0');
+          engagement = parseInt(row.Clicks || row.clicks || '0');
+        }
+
+        if (reach > 0 || engagement > 0) {
+          const engagementRate = reach > 0 ? (engagement / reach * 100) : 0;
+          content.push({
+            title: title.length > 50 ? title.substring(0, 50) + '...' : title,
+            platform: report.report_type,
+            reach,
+            engagement,
+            engagementRate: engagementRate.toFixed(2),
+            date: row.Date || row.date || report.created_at.split('T')[0]
+          });
+        }
+      });
+    });
+
+    return content.sort((a, b) => b.engagement - a.engagement).slice(0, 10);
+  };
+
+  const getChannelBreakdown = (reports: AnalyticsReport[]) => {
+    const channels: Record<string, {reach: number, engagement: number, posts: number}> = {};
+    
+    reports.forEach(report => {
+      if (!channels[report.report_type]) {
+        channels[report.report_type] = { reach: 0, engagement: 0, posts: 0 };
+      }
+      
+      const csvData = Array.isArray(report.csv_data) ? report.csv_data : [];
+      channels[report.report_type].posts += csvData.length;
+      
+      csvData.forEach((row: any) => {
+        if (report.report_type === 'linkedin') {
+          channels[report.report_type].reach += parseInt(row.Impressions || row.impressions || '0');
+          channels[report.report_type].engagement += (parseInt(row.Reactions || row.reactions || '0') + 
+                      parseInt(row.Comments || row.comments || '0') + 
+                      parseInt(row.Shares || row.shares || '0'));
+        } else if (report.report_type === 'youtube') {
+          channels[report.report_type].reach += parseInt(row.Views || row.views || '0');
+          channels[report.report_type].engagement += (parseInt(row.Likes || row.likes || '0') + 
+                      parseInt(row.Comments || row.comments || '0'));
+        } else if (report.report_type === 'newsletter') {
+          channels[report.report_type].reach += parseInt(row.Opens || row.opens || '0');
+          channels[report.report_type].engagement += parseInt(row.Clicks || row.clicks || '0');
+        }
+      });
+    });
+
+    return channels;
+  };
 
   const loadAnalyticsReports = async () => {
     if (!user || !currentWorkspace) return;
@@ -68,6 +192,10 @@ export default function AnalyticsDashboard() {
       if (error) throw error;
 
       setAnalyticsReports(data || []);
+      
+      // Process data for charts
+      const processed = processCSVDataForCharts(data || []);
+      setChartData(processed);
       
       // Calculate aggregated metrics
       const aggregated = data?.reduce((acc: AnalyticsData, report) => {
@@ -94,12 +222,20 @@ export default function AnalyticsDashboard() {
             acc.totalReach += parseInt(row.Opens || row.opens || '0');
             acc.engagement += parseInt(row.Clicks || row.clicks || '0');
           }
+
+          // Lead magnet metrics
+          if (report.report_type === 'lead-magnet') {
+            acc.totalReach += parseInt(row.Downloads || row.downloads || '0');
+            acc.conversions += parseInt(row['Email Signups'] || row.signups || '0');
+          }
         });
         
         return acc;
       }, { totalReach: 0, engagement: 0, conversions: 0, revenue: 0 });
 
       if (aggregated) {
+        // Calculate estimated revenue (simple heuristic)
+        aggregated.revenue = aggregated.conversions * 150; // $150 per conversion
         setAnalytics(aggregated);
       }
       
@@ -147,6 +283,9 @@ export default function AnalyticsDashboard() {
     conversions: Math.floor(analytics.conversions * 0.8),
     revenue: Math.floor(analytics.revenue * 0.75)
   };
+
+  const topContent = getTopPerformingContent(analyticsReports);
+  const channelBreakdown = getChannelBreakdown(analyticsReports);
 
   if (loading) {
     return (
@@ -249,59 +388,242 @@ export default function AnalyticsDashboard() {
         })}
       </div>
 
-      {/* Reports Overview */}
-      {analyticsReports.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Analytics Reports</CardTitle>
-            <CardDescription>Your uploaded analytics data</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {analyticsReports.slice(0, 5).map((report) => (
-                <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{report.report_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {report.report_type} • {new Date(report.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
-                    {Array.isArray(report.csv_data) ? report.csv_data.length : 0} rows
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Upload Section */}
-      <Tabs defaultValue="linkedin" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
-          <TabsTrigger value="youtube">YouTube</TabsTrigger>
-          <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
-          <TabsTrigger value="lead-magnet">Lead Magnets</TabsTrigger>
+      {/* Main Content */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="channels">Channels</TabsTrigger>
+          <TabsTrigger value="content">Top Content</TabsTrigger>
+          <TabsTrigger value="upload">Upload Data</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="linkedin" className="space-y-6">
-          <CSVUploader channel="linkedin" onDataProcessed={handleDataProcessed} />
+        <TabsContent value="overview" className="space-y-6">
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Performance Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Timeline</CardTitle>
+                <CardDescription>Daily reach and engagement from your CSV data</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {chartData.length > 0 ? (
+                  <div className="space-y-4">
+                    {chartData.slice(-7).map((point, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded">
+                        <div>
+                          <p className="font-medium">{new Date(point.date).toLocaleDateString()}</p>
+                          <p className="text-sm text-muted-foreground capitalize">{point.platform}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">{point.reach.toLocaleString()} reach</p>
+                          <p className="text-sm text-muted-foreground">{point.engagement} engagement</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No data available</p>
+                      <p className="text-sm">Upload CSV files to see performance timeline</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Channel Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Channel Performance</CardTitle>
+                <CardDescription>Performance breakdown by platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(channelBreakdown).length > 0 ? (
+                  <div className="space-y-4">
+                    {Object.entries(channelBreakdown).map(([channel, data]) => {
+                      const engagementRate = data.reach > 0 ? (data.engagement / data.reach * 100).toFixed(1) : '0';
+                      return (
+                        <div key={channel} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium capitalize">{channel}</p>
+                              <p className="text-sm text-muted-foreground">{data.posts} posts</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold">{data.reach.toLocaleString()}</p>
+                              <p className="text-sm text-muted-foreground">{engagementRate}% rate</p>
+                            </div>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div 
+                              className="h-2 rounded-full bg-primary"
+                              style={{ 
+                                width: `${Math.min(data.engagement / Math.max(...Object.values(channelBreakdown).map(c => c.engagement)) * 100, 100)}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No channel data available</p>
+                      <p className="text-sm">Upload CSV files to see channel breakdown</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Reports Overview */}
+          {analyticsReports.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Analytics Reports</CardTitle>
+                <CardDescription>Your uploaded analytics data</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsReports.slice(0, 5).map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{report.report_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {report.report_type} • {new Date(report.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                        {Array.isArray(report.csv_data) ? report.csv_data.length : 0} rows
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        <TabsContent value="youtube" className="space-y-6">
-          <CSVUploader channel="youtube" onDataProcessed={handleDataProcessed} />
+        <TabsContent value="channels" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Object.entries(channelBreakdown).map(([channel, data]) => {
+              const engagementRate = data.reach > 0 ? (data.engagement / data.reach * 100).toFixed(1) : '0';
+              const channelConfig = {
+                linkedin: { icon: Users, color: 'bg-blue-100 text-blue-600' },
+                youtube: { icon: Eye, color: 'bg-red-100 text-red-600' },
+                newsletter: { icon: MessageSquare, color: 'bg-purple-100 text-purple-600' },
+                'lead-magnet': { icon: Download, color: 'bg-green-100 text-green-600' }
+              };
+              
+              const config = channelConfig[channel as keyof typeof channelConfig] || { icon: Activity, color: 'bg-gray-100 text-gray-600' };
+              const IconComponent = config.icon;
+              
+              return (
+                <Card key={channel}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <div className={`p-1 rounded ${config.color}`}>
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <span className="capitalize">{channel} Performance</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-2xl font-bold">{data.posts}</p>
+                        <p className="text-xs text-muted-foreground">Posts/Items</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{data.reach.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Total Reach</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{data.engagement.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Engagement</p>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{engagementRate}%</p>
+                        <p className="text-xs text-muted-foreground">Engagement Rate</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </TabsContent>
 
-        <TabsContent value="newsletter" className="space-y-6">
-          <CSVUploader channel="newsletter" onDataProcessed={handleDataProcessed} />
+        <TabsContent value="content" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Performing Content</CardTitle>
+              <CardDescription>Content ranked by engagement from your CSV data</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {topContent.length > 0 ? (
+                <div className="space-y-4">
+                  {topContent.map((content, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {content.platform}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">{content.date}</span>
+                        </div>
+                        <h4 className="font-medium mb-1">{content.title}</h4>
+                        <div className="flex space-x-6 text-sm text-muted-foreground">
+                          <span className="flex items-center space-x-1">
+                            <Eye className="h-3 w-3" />
+                            <span>{content.reach.toLocaleString()}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Heart className="h-3 w-3" />
+                            <span>{content.engagement}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Zap className="h-3 w-3" />
+                            <span>{content.engagementRate}% rate</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">#{index + 1}</div>
+                        <div className="text-xs text-muted-foreground">Ranking</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No content data available</p>
+                    <p className="text-sm">Upload CSV files to see top performing content</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="lead-magnet" className="space-y-6">
-          <CSVUploader channel="lead-magnet" onDataProcessed={handleDataProcessed} />
+        <TabsContent value="upload" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CSVUploader channel="linkedin" onDataProcessed={handleDataProcessed} />
+            <CSVUploader channel="youtube" onDataProcessed={handleDataProcessed} />
+            <CSVUploader channel="newsletter" onDataProcessed={handleDataProcessed} />
+            <CSVUploader channel="lead-magnet" onDataProcessed={handleDataProcessed} />
+          </div>
         </TabsContent>
       </Tabs>
 
