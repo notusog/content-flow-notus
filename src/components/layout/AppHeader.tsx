@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Settings, User, Keyboard } from 'lucide-react';
+import { LogOut, Settings, User, Keyboard, Search } from 'lucide-react';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 
 export function AppHeader() {
@@ -37,6 +37,25 @@ export function AppHeader() {
 
         {/* Right side - User menu and quick actions */}
         <div className="flex items-center space-x-3">
+          {/* Global Search Trigger */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="hidden sm:flex items-center space-x-2 text-muted-foreground hover:text-foreground min-w-[200px] justify-start"
+            onClick={() => {
+              const event = new KeyboardEvent('keydown', {
+                key: 'k',
+                metaKey: true,
+                bubbles: true
+              });
+              document.dispatchEvent(event);
+            }}
+          >
+            <Search className="h-4 w-4" />
+            <span>Search...</span>
+            <kbd className="kbd ml-auto">⌘K</kbd>
+          </Button>
+
           {/* Keyboard shortcuts hint */}
           <div className="hidden lg:flex items-center space-x-1 text-xs text-muted-foreground">
             <Keyboard className="h-3 w-3" />

@@ -1,8 +1,40 @@
-# Welcome to your Lovable project
+# notus OS - Content Creation Platform
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/47a43244-c959-4233-b457-69e9f3c60b6c
+
+A sophisticated content strategy and creation platform designed for professional teams.
+
+## 🚀 Quick Start
+
+### Demo Accounts (Ready to Use)
+
+**Content Strategist** (Full Access)
+- Email: `sarah@notus.com`
+- Password: `strategist123`
+
+**Client Visionary** (Read-Only Dashboard)
+- Email: `client@company.com`
+- Password: `client123`
+
+**GTM Closer** (Lead Management)
+- Email: `closer@sales.com`
+- Password: `gtm123`
+
+**Leadership Architect** (Admin Access)
+- Email: `leader@notus.com`
+- Password: `leader123`
+
+## 🎯 Key Features
+
+- **Content Engine**: Kanban-style pipeline management
+- **Multi-Channel Hub**: Cross-platform scheduling 
+- **Insight Extractor**: AI-powered content analysis
+- **Pipeline Generator**: Lead management & sales tasks
+- **Analytics Dashboard**: Performance tracking & ROI
+- **Global Search**: ⌘K for instant navigation
+- **Role-Based Access**: Tailored permissions per user type
 
 ## How can I edit this code?
 
