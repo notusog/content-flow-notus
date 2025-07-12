@@ -27,10 +27,12 @@ export function AppHeader() {
     return email.split('@')[0].slice(0, 2).toUpperCase();
   };
 
-  const handleCreateWorkspace = async () => {
+  const handleCreateWorkspace = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const name = prompt('Enter workspace name:');
-    if (name) {
-      await createWorkspace({ name });
+    if (name?.trim()) {
+      await createWorkspace({ name: name.trim() });
     }
   };
 

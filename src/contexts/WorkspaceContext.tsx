@@ -124,20 +124,31 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [user, currentWorkspace?.id]);
 
   const createWorkspace = async (data: { name: string; description?: string }) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user available for workspace creation');
+      return;
+    }
 
     try {
+      console.log('Creating workspace for user:', user.id, 'with data:', data);
+      
       const { data: workspace, error } = await supabase
         .from('workspaces')
         .insert({
-          ...data,
+          name: data.name,
+          description: data.description || null,
           user_id: user.id,
+          settings: {}
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Workspace creation error:', error);
+        throw error;
+      }
 
+      console.log('Workspace created successfully:', workspace);
       setWorkspaces(prev => [workspace, ...prev]);
       setCurrentWorkspace(workspace);
 
@@ -149,7 +160,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       console.error('Error creating workspace:', error);
       toast({
         title: "Error",
-        description: "Failed to create workspace",
+        description: `Failed to create workspace: ${error.message}`,
         variant: "destructive",
       });
     }
