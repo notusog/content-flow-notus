@@ -83,7 +83,7 @@ const navigationGroups: NavGroup[] = [
       },
       {
         title: 'YouTube',
-        url: '/vlogs',
+        url: '/youtube',
         icon: Youtube,
         permissions: ['content:create', 'content:view', 'admin:all']
       },

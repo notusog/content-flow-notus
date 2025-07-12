@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Play, 
   Plus, 
@@ -37,11 +38,23 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const YouTube = () => {
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    client: "",
+    description: "",
+    category: "",
+    tags: ""
+  });
 
   // Sample data
-  const videos = [
+  const [videos, setVideos] = useState([
     {
       id: 1,
       title: "B2B SaaS Growth Strategies for 2024",
@@ -94,7 +107,62 @@ const YouTube = () => {
       engagement: 0,
       client: "TrendWatch"
     }
-  ];
+  ]);
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnailFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateVlog = () => {
+    if (!formData.title || !formData.description) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newVideo = {
+      id: videos.length + 1,
+      title: formData.title,
+      thumbnail: thumbnailPreview || "/api/placeholder/320/180",
+      status: "draft",
+      publishDate: selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      duration: "0:00",
+      views: 0,
+      likes: 0,
+      comments: 0,
+      engagement: 0,
+      client: formData.client || "Personal"
+    };
+
+    setVideos([newVideo, ...videos]);
+    
+    // Reset form
+    setFormData({ title: "", client: "", description: "", category: "", tags: "" });
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+    setSelectedDate(undefined);
+    setIsCreateOpen(false);
+
+    toast({
+      title: "Vlog Created!",
+      description: "Your new vlog has been added to your content library.",
+    });
+  };
 
   const analytics = {
     totalViews: 2850000,
@@ -129,36 +197,42 @@ const YouTube = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">YouTube</h1>
-          <p className="text-muted-foreground">Create and manage video content for your channels</p>
+          <h1 className="text-3xl font-bold text-foreground">YouTube Vlogs</h1>
+          <p className="text-muted-foreground">Create and manage your vlog content with thumbnails and descriptions</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="h-4 w-4 mr-2" />
-              New Video
+              New Vlog
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Video</DialogTitle>
+              <DialogTitle>Create New Vlog</DialogTitle>
               <DialogDescription>
-                Set up your video project and start planning your content.
+                Set up your vlog with title, description, and thumbnail attachment.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Video Title</Label>
-                  <Input id="title" placeholder="Enter video title..." />
+                  <Label htmlFor="title">Vlog Title *</Label>
+                  <Input 
+                    id="title" 
+                    placeholder="Enter vlog title..." 
+                    value={formData.title}
+                    onChange={(e) => handleInputChange("title", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="client">Client</Label>
-                  <Select>
+                  <Label htmlFor="client">Client/Channel</Label>
+                  <Select value={formData.client} onValueChange={(value) => handleInputChange("client", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select client" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="personal">Personal</SelectItem>
                       <SelectItem value="techcorp">TechCorp</SelectItem>
                       <SelectItem value="startupxyz">StartupXYZ</SelectItem>
                       <SelectItem value="enterprise">Enterprise Solutions</SelectItem>
@@ -167,26 +241,52 @@ const YouTube = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description *</Label>
                 <Textarea 
                   id="description" 
-                  placeholder="Describe your video content, key points, and target audience..."
-                  rows={3}
+                  placeholder="Describe your vlog content, key points, and target audience..."
+                  rows={4}
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="thumbnail">Thumbnail Image</Label>
+                <div className="flex items-center space-x-4">
+                  <Input 
+                    id="thumbnail" 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleThumbnailChange}
+                    className="flex-1"
+                  />
+                  {thumbnailPreview && (
+                    <div className="relative w-20 h-12 rounded overflow-hidden border">
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Thumbnail preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Upload a custom thumbnail for your vlog (recommended: 1280x720px)</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
-                  <Select>
+                  <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="vlog">Personal Vlog</SelectItem>
                       <SelectItem value="tutorial">Tutorial</SelectItem>
-                      <SelectItem value="interview">Interview</SelectItem>
-                      <SelectItem value="case-study">Case Study</SelectItem>
-                      <SelectItem value="industry-news">Industry News</SelectItem>
-                      <SelectItem value="product-demo">Product Demo</SelectItem>
+                      <SelectItem value="review">Review</SelectItem>
+                      <SelectItem value="travel">Travel</SelectItem>
+                      <SelectItem value="lifestyle">Lifestyle</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -219,14 +319,19 @@ const YouTube = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tags">Tags</Label>
-                <Input id="tags" placeholder="Enter tags separated by commas..." />
+                <Input 
+                  id="tags" 
+                  placeholder="Enter tags separated by commas..." 
+                  value={formData.tags}
+                  onChange={(e) => handleInputChange("tags", e.target.value)}
+                />
               </div>
               <div className="flex justify-end space-x-3">
                 <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsCreateOpen(false)}>
-                  Create Video Project
+                <Button onClick={handleCreateVlog}>
+                  Create Vlog
                 </Button>
               </div>
             </div>
@@ -301,7 +406,7 @@ const YouTube = () => {
       {/* Main Content */}
       <Tabs defaultValue="videos" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="videos">Videos</TabsTrigger>
+          <TabsTrigger value="videos">Vlogs</TabsTrigger>
           <TabsTrigger value="calendar">Content Calendar</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="workflow">Workflow</TabsTrigger>
@@ -312,8 +417,12 @@ const YouTube = () => {
             {videos.map((video) => (
               <Card key={video.id} className="overflow-hidden">
                 <div className="relative">
-                  <div className="aspect-video bg-muted rounded-t-lg flex items-center justify-center">
-                    <Video className="h-8 w-8 text-muted-foreground" />
+                  <div className="aspect-video bg-muted rounded-t-lg flex items-center justify-center overflow-hidden">
+                    {video.thumbnail.startsWith('data:') ? (
+                      <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <Video className="h-8 w-8 text-muted-foreground" />
+                    )}
                   </div>
                   <Badge 
                     className={cn("absolute top-2 right-2 text-xs", getStatusColor(video.status))}
