@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CSVUploader } from '@/components/data/CSVUploader';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -61,7 +61,7 @@ export default function AnalyticsDashboard() {
     revenue: 0
   });
 
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
   const { toast } = useToast();
 

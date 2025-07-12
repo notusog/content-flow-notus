@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Bot, TestTube } from 'lucide-react';
@@ -16,7 +16,7 @@ export function AIChatTester() {
   const [response, setResponse] = useState('');
   const [error, setError] = useState('');
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   const testAIChat = async () => {

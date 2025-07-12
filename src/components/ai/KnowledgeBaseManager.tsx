@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,7 +31,7 @@ export function KnowledgeBaseManager() {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<KnowledgeItem | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   useEffect(() => {
@@ -310,7 +310,7 @@ function AddKnowledgeForm({ item, onSave, onClose }: AddKnowledgeFormProps) {
   });
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   const handleSubmit = async (e: React.FormEvent) => {

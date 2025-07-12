@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -48,7 +48,7 @@ export function PersonalBrandsManagement() {
   const [isAddingContext, setIsAddingContext] = useState(false);
   const [contextType, setContextType] = useState<string>('');
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   useEffect(() => {
@@ -400,7 +400,7 @@ function CreateBrandForm({ onSave, onClose }: { onSave: () => void; onClose: () 
   });
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -513,7 +513,7 @@ function AddContextForm({ brandId, onSave, onClose }: { brandId: string; onSave:
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   const contextTypes = [

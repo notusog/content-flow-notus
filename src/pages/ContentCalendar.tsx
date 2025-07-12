@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +34,7 @@ const platformColors = {
 };
 
 export default function ContentCalendar() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>([]);

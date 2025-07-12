@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { usePersonalBrand } from '@/contexts/PersonalBrandContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function WorkspaceSetup() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { workspaces, currentWorkspace, createWorkspace, setCurrentWorkspace } = useWorkspace();
   const { personalBrands, createPersonalBrand } = usePersonalBrand();
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);

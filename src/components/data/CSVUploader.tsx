@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { 
   Upload, 
@@ -38,7 +38,7 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [csvFiles, setCsvFiles] = useState<CSVData[]>([]);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
 
   const channelConfigs = {

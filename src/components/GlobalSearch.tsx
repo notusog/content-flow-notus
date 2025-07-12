@@ -9,7 +9,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -36,7 +36,7 @@ interface CommandItem {
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   // Global keyboard shortcut
   useEffect(() => {
