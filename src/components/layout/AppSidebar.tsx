@@ -21,6 +21,7 @@ import {
   LinkedinIcon,
   Brain,
   User,
+  Bot,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -67,6 +68,12 @@ const navigationGroups: NavGroup[] = [
         url: '/content',
         icon: FileText,
         permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'AI Chat',
+        url: '/ai-chat',
+        icon: Bot,
+        permissions: ['content:view', 'admin:all']
       }
     ]
   },

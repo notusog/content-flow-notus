@@ -18,6 +18,7 @@ import YouTube from "./pages/YouTube";
 import LinkedIn from "./pages/LinkedIn";
 import ContentLibrary from "./pages/ContentLibrary";
 import PersonalBrands from "./pages/PersonalBrands";
+import AIChat from "./pages/AIChat";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound";
 
@@ -50,6 +51,7 @@ function ProtectedRoutes() {
           <Route path="linkedin" element={<LinkedIn />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="library" element={<ContentLibrary />} />
+          <Route path="ai-chat" element={<AIChat />} />
           <Route path="personal-brands" element={<PersonalBrands />} />
           <Route path="*" element={<NotFound />} />
         </Route>

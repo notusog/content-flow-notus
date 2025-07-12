@@ -70,6 +70,45 @@ export type Database = {
           },
         ]
       }
+      chat_conversations: {
+        Row: {
+          agent_type: string
+          assistant_message: string
+          conversation_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          updated_at: string
+          user_id: string
+          user_message: string
+          workspace_id: string
+        }
+        Insert: {
+          agent_type?: string
+          assistant_message: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string
+          user_id: string
+          user_message: string
+          workspace_id: string
+        }
+        Update: {
+          agent_type?: string
+          assistant_message?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string
+          user_id?: string
+          user_message?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       content_pieces: {
         Row: {
           content: string
