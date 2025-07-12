@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import ContentCallForm from '@/components/forms/ContentCallForm';
 import { 
   User, 
   Plus, 
@@ -73,12 +74,37 @@ interface PersonalBrand {
   strategyDocuments: StrategyDocument[];
   contentLibrary: ContentSource[];
   generatedContent: ContentPiece[];
+  contentCalls: ContentCall[];
+}
+
+interface ContentCall {
+  id: string;
+  clientName: string;
+  projectName: string;
+  projectGoal: string;
+  contentArchetype: string;
+  targetAudience: string;
+  contentGoals: string;
+  ideas: ContentIdea[];
+  callNotes: string;
+  transcript: string;
+  nextSteps: string;
+  createdDate: string;
+  brandId: string;
+}
+
+interface ContentIdea {
+  id: string;
+  title: string;
+  outline: string;
+  hook: string;
+  questions: string[];
 }
 
 interface ContentSource {
   id: string;
   title: string;
-  type: 'article' | 'video' | 'audio' | 'image' | 'document' | 'url';
+  type: 'article' | 'video' | 'audio' | 'image' | 'document' | 'url' | 'content-call' | 'transcript';
   content: string;
   summary: string;
   tags: string[];
@@ -88,6 +114,7 @@ interface ContentSource {
   clientId?: string;
   insights?: string[];
   relatedTopics?: string[];
+  contentCallId?: string;
 }
 
 interface ContentPiece {
@@ -101,6 +128,7 @@ interface ContentPiece {
   createdDate: string;
   brandId: string;
   clientId?: string;
+  contentCallId?: string;
 }
 
 interface LinkedInPost {
@@ -279,7 +307,8 @@ const mockPersonalBrands: PersonalBrand[] = [
       followers: 0,
       contentScore: 0
     },
-    lastUpdated: '2024-01-16'
+    lastUpdated: '2024-01-16',
+    contentCalls: []
   },
   {
     id: 'vicktoria-klich',
@@ -359,7 +388,8 @@ const mockPersonalBrands: PersonalBrand[] = [
       followers: 20406,
       contentScore: 9.2
     },
-    lastUpdated: '2024-01-16'
+    lastUpdated: '2024-01-16',
+    contentCalls: []
   }
 ];
 
@@ -435,6 +465,7 @@ export default function PersonalBrands() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>(mockWorkspaces);
   const [isCreatingBrand, setIsCreatingBrand] = useState(false);
   const [isAddingSource, setIsAddingSource] = useState(false);
+  const [isAddingContentCall, setIsAddingContentCall] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newBrand, setNewBrand] = useState({
@@ -559,6 +590,68 @@ export default function PersonalBrands() {
     });
   };
 
+  const addContentCall = (callData: any) => {
+    if (!selectedBrand) return;
+
+    const newCall: ContentCall = {
+      id: `call-${Date.now()}`,
+      ...callData,
+      createdDate: new Date().toISOString().split('T')[0],
+      brandId: selectedBrand.id
+    };
+
+    // Also create content sources from transcript and notes
+    const sources: ContentSource[] = [];
+    
+    if (callData.transcript) {
+      sources.push({
+        id: `transcript-${Date.now()}`,
+        title: `${callData.clientName} - Call Transcript`,
+        type: 'transcript',
+        content: callData.transcript,
+        summary: `Transcript from content call with ${callData.clientName}`,
+        tags: ['transcript', 'content-call', callData.clientName.toLowerCase().replace(/\s+/g, '-')],
+        source: 'Content Call',
+        dateAdded: new Date().toISOString().split('T')[0],
+        brandId: selectedBrand.id,
+        contentCallId: newCall.id,
+        insights: callData.ideas.map((idea: any) => idea.title),
+        relatedTopics: callData.ideas.flatMap((idea: any) => idea.questions)
+      });
+    }
+
+    if (callData.callNotes) {
+      sources.push({
+        id: `notes-${Date.now()}`,
+        title: `${callData.clientName} - Call Notes`,
+        type: 'content-call',
+        content: callData.callNotes,
+        summary: `Detailed notes from content strategy call`,
+        tags: ['notes', 'content-call', callData.clientName.toLowerCase().replace(/\s+/g, '-')],
+        source: 'Content Call',
+        dateAdded: new Date().toISOString().split('T')[0],
+        brandId: selectedBrand.id,
+        contentCallId: newCall.id,
+        insights: [],
+        relatedTopics: []
+      });
+    }
+
+    const updatedBrand = {
+      ...selectedBrand,
+      contentCalls: [...selectedBrand.contentCalls, newCall],
+      contentLibrary: [...selectedBrand.contentLibrary, ...sources]
+    };
+
+    setPersonalBrands(prev => prev.map(b => b.id === selectedBrand.id ? updatedBrand : b));
+    setIsAddingContentCall(false);
+    
+    toast({
+      title: "Content Call Saved",
+      description: `Added content call with ${sources.length} new sources to brand library`,
+    });
+  };
+
   const handleCreateBrand = () => {
     if (!newBrand.name || !newBrand.role || !newBrand.company) {
       toast({
@@ -584,6 +677,7 @@ export default function PersonalBrands() {
       contentLibrary: [],
       generatedContent: [],
       approvedContent: [],
+      contentCalls: [],
       llmSettings: {
         primaryModel: 'Claude 3.5 Sonnet',
         temperature: 0.7,
@@ -806,10 +900,16 @@ export default function PersonalBrands() {
                       AI-powered content generation using your knowledge base and strategy
                     </p>
                   </div>
-                  <Button onClick={() => setIsAddingSource(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Source
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setIsAddingContentCall(true)}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Content Call
+                    </Button>
+                    <Button onClick={() => setIsAddingSource(true)} variant="outline">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Source
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Search and Filters */}
@@ -1215,6 +1315,19 @@ export default function PersonalBrands() {
             </DialogDescription>
           </DialogHeader>
           <AddSourceForm onSubmit={addContentSource} onCancel={() => setIsAddingSource(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Call Dialog */}
+      <Dialog open={isAddingContentCall} onOpenChange={setIsAddingContentCall}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Content Call Preparation & Analysis</DialogTitle>
+            <DialogDescription>
+              Comprehensive content creation workflow from call prep to analysis
+            </DialogDescription>
+          </DialogHeader>
+          <ContentCallForm onSubmit={addContentCall} onCancel={() => setIsAddingContentCall(false)} />
         </DialogContent>
       </Dialog>
     </div>
