@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CSVUploader } from '@/components/data/CSVUploader';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -17,7 +18,8 @@ import {
   Calendar,
   Filter,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Upload
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -212,6 +214,7 @@ export default function Analytics() {
           <TabsTrigger value="channels">Channel Performance</TabsTrigger>
           <TabsTrigger value="content">Top Content</TabsTrigger>
           <TabsTrigger value="funnel">Conversion Funnel</TabsTrigger>
+          <TabsTrigger value="upload">Upload Data</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -545,6 +548,27 @@ export default function Analytics() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="upload" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CSVUploader 
+              channel="linkedin" 
+              onDataProcessed={(data) => console.log('LinkedIn data:', data)} 
+            />
+            <CSVUploader 
+              channel="youtube" 
+              onDataProcessed={(data) => console.log('YouTube data:', data)} 
+            />
+            <CSVUploader 
+              channel="newsletter" 
+              onDataProcessed={(data) => console.log('Newsletter data:', data)} 
+            />
+            <CSVUploader 
+              channel="lead-magnet" 
+              onDataProcessed={(data) => console.log('Lead magnet data:', data)} 
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
