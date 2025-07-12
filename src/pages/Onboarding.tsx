@@ -234,8 +234,9 @@ export default function Onboarding() {
         description: "Your account is now fully set up.",
       });
 
-      // Force a page refresh to ensure proper navigation
-      window.location.href = '/';
+      // Redirect clients to their portal, strategists to dashboard
+      const redirectPath = isContentStrategist ? '/' : '/client-portal';
+      window.location.href = redirectPath;
     } catch (error: any) {
       toast({
         title: "Error completing onboarding",
