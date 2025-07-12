@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ContentProvider } from "@/contexts/ContentContext";
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import Auth from "./pages/Auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -24,6 +25,7 @@ import Settings from "./pages/Settings";
 import ContentLibrary from "./pages/ContentLibrary";
 import DigitalTwins from "./pages/DigitalTwins";
 import PersonalBrands from "./pages/PersonalBrands";
+import WorkspaceManager from "./pages/WorkspaceManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +65,7 @@ function ProtectedRoutes() {
           <Route path="library" element={<ContentLibrary />} />
           <Route path="digital-twins" element={<DigitalTwins />} />
           <Route path="personal-brands" element={<PersonalBrands />} />
+          <Route path="workspace-manager" element={<WorkspaceManager />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -75,13 +78,15 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <ContentProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ProtectedRoutes />
-          </BrowserRouter>
-        </ContentProvider>
+        <WorkspaceProvider>
+          <ContentProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ProtectedRoutes />
+            </BrowserRouter>
+          </ContentProvider>
+        </WorkspaceProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

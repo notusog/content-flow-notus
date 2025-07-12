@@ -29,7 +29,8 @@ import {
   Bot,
   User,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Briefcase
 } from 'lucide-react';
 
 interface NavItem {
@@ -55,6 +56,12 @@ const navigationGroups: NavGroup[] = [
         title: 'Dashboard',
         url: '/',
         icon: LayoutDashboard,
+        permissions: ['content:view', 'admin:all']
+      },
+      {
+        title: 'Workspace Manager',
+        url: '/workspace-manager',
+        icon: Briefcase,
         permissions: ['content:view', 'admin:all']
       },
       {

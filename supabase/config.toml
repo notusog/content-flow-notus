@@ -40,3 +40,9 @@ verify_jwt = false
 
 [functions.transcribe-audio]
 verify_jwt = false
+
+[functions.claude-copywriter]
+verify_jwt = false
+
+[functions.context-processor]
+verify_jwt = true

@@ -26,6 +26,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           content: string
@@ -38,6 +39,7 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           content?: string
@@ -50,8 +52,17 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_pieces_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_sources: {
         Row: {
@@ -67,6 +78,7 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           content: string
@@ -81,6 +93,7 @@ export type Database = {
           type: string
           updated_at?: string
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           content?: string
@@ -93,6 +106,92 @@ export type Database = {
           tags?: string[] | null
           title?: string
           type?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_sources_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_context: {
+        Row: {
+          content: string
+          context_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          content: string
+          context_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          content?: string
+          context_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_context_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          settings: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          settings?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          settings?: Json | null
           updated_at?: string
           user_id?: string
         }
