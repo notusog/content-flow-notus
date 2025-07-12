@@ -8,10 +8,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, LogIn, User, Lock, Mail } from 'lucide-react';
 
 const DEMO_CREDENTIALS = [
-  { email: 'sarah@notus.com', role: 'Content Strategist', password: 'demo123' },
-  { email: 'marcus@techcorp.com', role: 'Client', password: 'demo123' },
-  { email: 'elena@notus.com', role: 'GTM Specialist', password: 'demo123' },
-  { email: 'david@notus.com', role: 'Leadership', password: 'demo123' }
+  { email: 'contentstrategist@notus.com', role: 'Content Strategist', password: 'demo123' },
+  { email: 'client@company.com', role: 'Client', password: 'demo123' },
+  { email: 'setter@sales.com', role: 'Sales Setter', password: 'demo123' },
+  { email: 'leader@notus.com', role: 'Leadership', password: 'demo123' }
 ];
 
 export function LoginForm() {
