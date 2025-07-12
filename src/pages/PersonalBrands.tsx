@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import ContentCallForm from '@/components/forms/ContentCallForm';
+import YouTubeContentForm from '@/components/forms/YouTubeContentForm';
 import { 
   User, 
   Plus, 
@@ -75,6 +76,7 @@ interface PersonalBrand {
   contentLibrary: ContentSource[];
   generatedContent: ContentPiece[];
   contentCalls: ContentCall[];
+  youtubeContent: YouTubeContent[];
 }
 
 interface ContentCall {
@@ -101,10 +103,33 @@ interface ContentIdea {
   questions: string[];
 }
 
+interface YouTubeContent {
+  id: string;
+  title: string;
+  client: string;
+  episodeNumber: string;
+  timeframe: {
+    startDate: Date | undefined;
+    endDate: Date | undefined;
+  };
+  rawFootage: string[];
+  videoAssets: string[];
+  thumbnailOptions: string[];
+  titleOptions: string[];
+  descriptionOptions: string[];
+  vlogOutline: any;
+  timestamps: string[];
+  songsUsed: string[];
+  notes: string;
+  socialLinks: any;
+  createdDate: string;
+  brandId: string;
+}
+
 interface ContentSource {
   id: string;
   title: string;
-  type: 'article' | 'video' | 'audio' | 'image' | 'document' | 'url' | 'content-call' | 'transcript';
+  type: 'article' | 'video' | 'audio' | 'image' | 'document' | 'url' | 'content-call' | 'transcript' | 'youtube-content';
   content: string;
   summary: string;
   tags: string[];
@@ -115,6 +140,7 @@ interface ContentSource {
   insights?: string[];
   relatedTopics?: string[];
   contentCallId?: string;
+  youtubeContentId?: string;
 }
 
 interface ContentPiece {
@@ -308,7 +334,8 @@ const mockPersonalBrands: PersonalBrand[] = [
       contentScore: 0
     },
     lastUpdated: '2024-01-16',
-    contentCalls: []
+    contentCalls: [],
+    youtubeContent: []
   },
   {
     id: 'vicktoria-klich',
@@ -389,7 +416,8 @@ const mockPersonalBrands: PersonalBrand[] = [
       contentScore: 9.2
     },
     lastUpdated: '2024-01-16',
-    contentCalls: []
+    contentCalls: [],
+    youtubeContent: []
   }
 ];
 
@@ -466,6 +494,7 @@ export default function PersonalBrands() {
   const [isCreatingBrand, setIsCreatingBrand] = useState(false);
   const [isAddingSource, setIsAddingSource] = useState(false);
   const [isAddingContentCall, setIsAddingContentCall] = useState(false);
+  const [isAddingYouTubeContent, setIsAddingYouTubeContent] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newBrand, setNewBrand] = useState({
@@ -652,6 +681,47 @@ export default function PersonalBrands() {
     });
   };
 
+  const addYouTubeContent = (youtubeData: any) => {
+    if (!selectedBrand) return;
+
+    const newYouTubeContent: YouTubeContent = {
+      id: `youtube-${Date.now()}`,
+      ...youtubeData,
+      createdDate: new Date().toISOString().split('T')[0],
+      brandId: selectedBrand.id
+    };
+
+    // Create content source from YouTube content for reference
+    const youtubeSource: ContentSource = {
+      id: `youtube-source-${Date.now()}`,
+      title: `${youtubeData.title} - YouTube Production`,
+      type: 'youtube-content',
+      content: `Episode: ${youtubeData.episodeNumber}\nGoal: ${youtubeData.vlogOutline.goal}\n\nOutline:\n${JSON.stringify(youtubeData.vlogOutline, null, 2)}`,
+      summary: `YouTube content production for ${youtubeData.client}`,
+      tags: ['youtube', 'video-content', youtubeData.client.toLowerCase().replace(/\s+/g, '-')],
+      source: 'YouTube Production',
+      dateAdded: new Date().toISOString().split('T')[0],
+      brandId: selectedBrand.id,
+      youtubeContentId: newYouTubeContent.id,
+      insights: youtubeData.titleOptions,
+      relatedTopics: youtubeData.vlogOutline.mainStory.events
+    };
+
+    const updatedBrand = {
+      ...selectedBrand,
+      youtubeContent: [...selectedBrand.youtubeContent, newYouTubeContent],
+      contentLibrary: [...selectedBrand.contentLibrary, youtubeSource]
+    };
+
+    setPersonalBrands(prev => prev.map(b => b.id === selectedBrand.id ? updatedBrand : b));
+    setIsAddingYouTubeContent(false);
+    
+    toast({
+      title: "YouTube Content Created",
+      description: `Added ${youtubeData.title} with production assets and outline`,
+    });
+  };
+
   const handleCreateBrand = () => {
     if (!newBrand.name || !newBrand.role || !newBrand.company) {
       toast({
@@ -678,6 +748,7 @@ export default function PersonalBrands() {
       generatedContent: [],
       approvedContent: [],
       contentCalls: [],
+      youtubeContent: [],
       llmSettings: {
         primaryModel: 'Claude 3.5 Sonnet',
         temperature: 0.7,
@@ -901,7 +972,11 @@ export default function PersonalBrands() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={() => setIsAddingContentCall(true)}>
+                    <Button onClick={() => setIsAddingYouTubeContent(true)}>
+                      <Video className="mr-2 h-4 w-4" />
+                      YouTube Content
+                    </Button>
+                    <Button onClick={() => setIsAddingContentCall(true)} variant="outline">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Content Call
                     </Button>
@@ -1328,6 +1403,19 @@ export default function PersonalBrands() {
             </DialogDescription>
           </DialogHeader>
           <ContentCallForm onSubmit={addContentCall} onCancel={() => setIsAddingContentCall(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* YouTube Content Dialog */}
+      <Dialog open={isAddingYouTubeContent} onOpenChange={setIsAddingYouTubeContent}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>YouTube Content Production</DialogTitle>
+            <DialogDescription>
+              Complete YouTube vlog workflow - Charles & Charlotte style
+            </DialogDescription>
+          </DialogHeader>
+          <YouTubeContentForm onSubmit={addYouTubeContent} onCancel={() => setIsAddingYouTubeContent(false)} />
         </DialogContent>
       </Dialog>
     </div>
