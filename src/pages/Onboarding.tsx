@@ -234,9 +234,11 @@ export default function Onboarding() {
         description: "Your account is now fully set up.",
       });
 
-      // Redirect clients to their portal, strategists to dashboard
-      const redirectPath = isContentStrategist ? '/' : '/client-portal';
-      window.location.href = redirectPath;
+      // Wait a moment for the profile state to update, then redirect
+      setTimeout(() => {
+        const redirectPath = isContentStrategist ? '/' : '/client-portal';
+        window.location.href = redirectPath;
+      }, 1000);
     } catch (error: any) {
       toast({
         title: "Error completing onboarding",
