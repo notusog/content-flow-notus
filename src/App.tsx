@@ -20,6 +20,8 @@ import ContentLibrary from "./pages/ContentLibrary";
 import PersonalBrands from "./pages/PersonalBrands";
 import AIChat from "./pages/AIChat";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
+import ContentCalendar from "./pages/ContentCalendar";
+import ClientPortal from "./pages/ClientPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,8 @@ function ProtectedRoutes() {
           <Route path="library" element={<ContentLibrary />} />
           <Route path="ai-chat" element={<AIChat />} />
           <Route path="personal-brands" element={<PersonalBrands />} />
+          <Route path="content-calendar" element={<ContentCalendar />} />
+          <Route path="client-portal" element={<ClientPortal />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

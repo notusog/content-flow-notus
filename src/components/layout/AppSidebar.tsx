@@ -24,7 +24,8 @@ import {
   Bot,
   Settings,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 
 interface NavItem {
@@ -43,19 +44,73 @@ interface NavGroup {
 
 const navigationGroups: NavGroup[] = [
   {
-    title: 'Setup',
+    title: 'Dashboard',
     defaultOpen: true,
     items: [
       {
-        title: 'Workspace Setup',
-        url: '/workspace-setup',
+        title: 'Overview',
+        url: '/',
         icon: LayoutDashboard,
         permissions: ['content:view', 'admin:all']
       },
       {
-        title: 'Dashboard',
-        url: '/',
-        icon: LayoutDashboard,
+        title: 'Analytics Hub',
+        url: '/analytics',
+        icon: BarChart3,
+        permissions: ['reports:view', 'admin:all']
+      }
+    ]
+  },
+  {
+    title: 'Content Management',
+    defaultOpen: true,
+    items: [
+      {
+        title: 'Content Engine',
+        url: '/content',
+        icon: FileText,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'Content Library',
+        url: '/library',
+        icon: Brain,
+        permissions: ['content:view', 'admin:all']
+      },
+      {
+        title: 'Content Calendar',
+        url: '/content-calendar',
+        icon: Calendar,
+        permissions: ['content:view', 'admin:all']
+      }
+    ]
+  },
+  {
+    title: 'Channels',
+    defaultOpen: false,
+    items: [
+      {
+        title: 'LinkedIn',
+        url: '/linkedin',
+        icon: LinkedinIcon,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'YouTube',
+        url: '/youtube',
+        icon: Youtube,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      }
+    ]
+  },
+  {
+    title: 'Setup',
+    defaultOpen: false,
+    items: [
+      {
+        title: 'Workspace Setup',
+        url: '/workspace-setup',
+        icon: Settings,
         permissions: ['content:view', 'admin:all']
       },
       {
@@ -65,52 +120,10 @@ const navigationGroups: NavGroup[] = [
         permissions: ['content:view', 'admin:all']
       },
       {
-        title: 'Content Engine',
-        url: '/content',
-        icon: FileText,
-        permissions: ['content:create', 'content:view', 'admin:all']
-      },
-      {
         title: 'AI Chat',
         url: '/ai-chat',
         icon: Bot,
         permissions: ['content:view', 'admin:all']
-      }
-    ]
-  },
-  {
-    title: 'Library',
-    defaultOpen: false,
-    items: [
-      {
-        title: 'Content Library',
-        url: '/library',
-        icon: Brain,
-        permissions: ['content:view', 'admin:all']
-      },
-      {
-        title: 'YouTube',
-        url: '/youtube',
-        icon: Youtube,
-        permissions: ['content:create', 'content:view', 'admin:all']
-      },
-      {
-        title: 'LinkedIn',
-        url: '/linkedin',
-        icon: LinkedinIcon,
-        permissions: ['content:create', 'content:view', 'admin:all']
-      }
-    ]
-  },
-  {
-    title: 'Analytics',
-    defaultOpen: false,
-    items: [
-      {
-        title: 'Performance',
-        url: '/analytics',
-        icon: BarChart3,
-        permissions: ['reports:view', 'admin:all']
       }
     ]
   }
