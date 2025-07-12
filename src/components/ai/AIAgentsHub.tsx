@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, MessageSquare, Plus, Settings, Database } from 'lucide-react';
+import { Bot, MessageSquare, Plus, Settings, Database, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AIAgentChat } from '@/components/ai/AIAgentChat';
 import { AgentConfiguration } from '@/components/ai/AgentConfiguration';
 import { KnowledgeBaseManager } from '@/components/ai/KnowledgeBaseManager';
+import { AIChatTester } from '@/components/ai/AIChatTester';
 
 const agentTypes = [
   {
@@ -44,9 +45,10 @@ const agentTypes = [
 ];
 
 export function AIAgentsHub() {
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [showConfiguration, setShowConfiguration] = useState(false);
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [showTester, setShowTester] = useState(false);
+  const [showConfiguration, setShowConfiguration] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -70,6 +72,21 @@ export function AIAgentsHub() {
                 <DialogTitle>Knowledge Base Manager</DialogTitle>
               </DialogHeader>
               <KnowledgeBaseManager />
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showTester} onOpenChange={setShowTester}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <TestTube className="h-4 w-4 mr-2" />
+                Test AI Chat
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>AI Chat Tester</DialogTitle>
+              </DialogHeader>
+              <AIChatTester />
             </DialogContent>
           </Dialog>
           

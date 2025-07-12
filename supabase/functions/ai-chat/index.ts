@@ -16,7 +16,13 @@ serve(async (req) => {
   try {
     const { message, agentType, workspaceId, userId, conversationId } = await req.json();
     
-    console.log('AI Chat request:', { agentType, workspaceId, userId });
+    console.log('AI Chat request received:', { 
+      agentType, 
+      workspaceId, 
+      userId, 
+      messageLength: message?.length,
+      conversationId 
+    });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -24,13 +30,22 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get agent configuration
+    console.log('Getting agent configuration for:', agentType);
     const agentConfig = await getAgentConfig(supabase, agentType, workspaceId);
+    console.log('Agent config retrieved:', { 
+      name: agentConfig.name, 
+      provider: agentConfig.provider, 
+      model: agentConfig.model 
+    });
     
     // Get relevant knowledge base content
+    console.log('Loading knowledge base for workspace:', workspaceId);
     const knowledgeBase = await getKnowledgeBase(supabase, workspaceId, message);
+    console.log('Knowledge base loaded:', { itemCount: knowledgeBase.length });
     
     // Get conversation history
     const conversationHistory = await getConversationHistory(supabase, conversationId);
+    console.log('Conversation history loaded:', { messageCount: conversationHistory.length });
 
     // Prepare system prompt with knowledge base
     const systemPrompt = buildSystemPrompt(agentConfig, knowledgeBase);
@@ -40,19 +55,31 @@ serve(async (req) => {
       ? Deno.env.get('ANTHROPIC_API_KEY')
       : Deno.env.get('OPENAI_API_KEY');
 
+    console.log('API Key check:', { 
+      provider: agentConfig.provider, 
+      hasKey: !!apiKey,
+      keyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'none'
+    });
+
     if (!apiKey) {
+      console.error('API key missing for provider:', agentConfig.provider);
       throw new Error(`API key not configured for provider: ${agentConfig.provider}`);
     }
 
     // Call appropriate LLM
+    console.log('Calling LLM with provider:', agentConfig.provider);
     let response;
     if (agentConfig.provider === 'anthropic') {
-      response = await callAnthropicAPI(apiKey, systemPrompt, message, conversationHistory);
+      console.log('Using Anthropic API with model:', agentConfig.model);
+      response = await callAnthropicAPI(apiKey, systemPrompt, message, conversationHistory, agentConfig.model);
     } else {
-      response = await callOpenAIAPI(apiKey, systemPrompt, message, conversationHistory);
+      console.log('Using OpenAI API with model:', agentConfig.model);
+      response = await callOpenAIAPI(apiKey, systemPrompt, message, conversationHistory, agentConfig.model);
     }
-
+    
+    console.log('LLM response received:', { responseLength: response?.length });
     // Store conversation in database
+    console.log('Storing conversation in database');
     await storeConversation(supabase, {
       conversationId,
       userId,
@@ -61,7 +88,8 @@ serve(async (req) => {
       assistantMessage: response,
       agentType
     });
-
+    
+    console.log('AI Chat request completed successfully');
     return new Response(JSON.stringify({ 
       response,
       agentType,
@@ -230,7 +258,8 @@ function buildSystemPrompt(agentConfig: any, knowledgeBase: any[]) {
   return systemPrompt;
 }
 
-async function callOpenAIAPI(apiKey: string, systemPrompt: string, message: string, history: any[]) {
+async function callOpenAIAPI(apiKey: string, systemPrompt: string, message: string, history: any[], model = 'gpt-4.1-2025-04-14') {
+  console.log('OpenAI API call with model:', model);
   const messages = [
     { role: 'system', content: systemPrompt },
     ...history.map(h => [
@@ -247,7 +276,7 @@ async function callOpenAIAPI(apiKey: string, systemPrompt: string, message: stri
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-2025-04-14',
+      model: model,
       messages,
       temperature: 0.7,
       max_tokens: 2000
@@ -255,10 +284,16 @@ async function callOpenAIAPI(apiKey: string, systemPrompt: string, message: stri
   });
 
   const data = await response.json();
+  console.log('OpenAI response status:', response.status);
+  if (!response.ok) {
+    console.error('OpenAI API error:', data);
+    throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+  }
   return data.choices[0].message.content;
 }
 
-async function callAnthropicAPI(apiKey: string, systemPrompt: string, message: string, history: any[]) {
+async function callAnthropicAPI(apiKey: string, systemPrompt: string, message: string, history: any[], model = 'claude-sonnet-4-20250514') {
+  console.log('Anthropic API call with model:', model);
   const messages = [
     ...history.map(h => [
       { role: 'user', content: h.user_message },
@@ -275,7 +310,7 @@ async function callAnthropicAPI(apiKey: string, systemPrompt: string, message: s
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: model,
       max_tokens: 2000,
       system: systemPrompt,
       messages
@@ -283,6 +318,11 @@ async function callAnthropicAPI(apiKey: string, systemPrompt: string, message: s
   });
 
   const data = await response.json();
+  console.log('Anthropic response status:', response.status);
+  if (!response.ok) {
+    console.error('Anthropic API error:', data);
+    throw new Error(`Anthropic API error: ${data.error?.message || data.error?.type || 'Unknown error'}`);
+  }
   return data.content[0].text;
 }
 
