@@ -75,6 +75,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          personal_brand_id: string | null
           platform: string
           source_ids: string[] | null
           status: string
@@ -88,6 +89,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          personal_brand_id?: string | null
           platform: string
           source_ids?: string[] | null
           status: string
@@ -101,6 +103,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          personal_brand_id?: string | null
           platform?: string
           source_ids?: string[] | null
           status?: string
@@ -111,6 +114,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "content_pieces_personal_brand_id_fkey"
+            columns: ["personal_brand_id"]
+            isOneToOne: false
+            referencedRelation: "personal_brands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "content_pieces_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -126,6 +136,7 @@ export type Database = {
           created_at: string
           id: string
           insights: string[] | null
+          personal_brand_id: string | null
           related_topics: string[] | null
           source: string | null
           summary: string | null
@@ -141,6 +152,7 @@ export type Database = {
           created_at?: string
           id?: string
           insights?: string[] | null
+          personal_brand_id?: string | null
           related_topics?: string[] | null
           source?: string | null
           summary?: string | null
@@ -156,6 +168,7 @@ export type Database = {
           created_at?: string
           id?: string
           insights?: string[] | null
+          personal_brand_id?: string | null
           related_topics?: string[] | null
           source?: string | null
           summary?: string | null
@@ -167,6 +180,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "content_sources_personal_brand_id_fkey"
+            columns: ["personal_brand_id"]
+            isOneToOne: false
+            referencedRelation: "personal_brands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "content_sources_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -253,6 +273,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personal_brands: {
+        Row: {
+          avatar_url: string | null
+          banner_url: string | null
+          bio: string | null
+          brand_colors: Json | null
+          created_at: string
+          description: string | null
+          expertise_areas: string[] | null
+          id: string
+          knowledge_base: Json | null
+          name: string
+          social_links: Json | null
+          tone_of_voice: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          brand_colors?: Json | null
+          created_at?: string
+          description?: string | null
+          expertise_areas?: string[] | null
+          id?: string
+          knowledge_base?: Json | null
+          name: string
+          social_links?: Json | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          banner_url?: string | null
+          bio?: string | null
+          brand_colors?: Json | null
+          created_at?: string
+          description?: string | null
+          expertise_areas?: string[] | null
+          id?: string
+          knowledge_base?: Json | null
+          name?: string
+          social_links?: Json | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       transcript_segments: {
         Row: {

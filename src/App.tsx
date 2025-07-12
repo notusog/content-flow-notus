@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ContentProvider } from "@/contexts/ContentContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { PersonalBrandProvider } from "@/contexts/PersonalBrandContext";
 import Auth from "./pages/Auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -59,13 +60,15 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <WorkspaceProvider>
-          <ContentProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ProtectedRoutes />
-            </BrowserRouter>
-          </ContentProvider>
+          <PersonalBrandProvider>
+            <ContentProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ProtectedRoutes />
+              </BrowserRouter>
+            </ContentProvider>
+          </PersonalBrandProvider>
         </WorkspaceProvider>
       </AuthProvider>
     </TooltipProvider>
