@@ -27,7 +27,9 @@ import {
   LinkedinIcon,
   Brain,
   Bot,
-  User
+  User,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface NavItem {
@@ -38,96 +40,129 @@ interface NavItem {
   badge?: string;
 }
 
-const navigationItems: NavItem[] = [
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+const navigationGroups: NavGroup[] = [
   {
-    title: 'Dashboard',
-    url: '/',
-    icon: LayoutDashboard,
-    permissions: ['content:view', 'admin:all']
+    title: 'Workspace',
+    defaultOpen: true,
+    items: [
+      {
+        title: 'Dashboard',
+        url: '/',
+        icon: LayoutDashboard,
+        permissions: ['content:view', 'admin:all']
+      },
+      {
+        title: 'Content Engine',
+        url: '/content',
+        icon: FileText,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'Content Library',
+        url: '/library',
+        icon: Brain,
+        permissions: ['content:view', 'admin:all']
+      }
+    ]
   },
   {
-    title: 'Content Engine',
-    url: '/content',
-    icon: FileText,
-    permissions: ['content:create', 'content:view', 'admin:all']
+    title: 'Channels',
+    defaultOpen: false,
+    items: [
+      {
+        title: 'Multi-Channel Hub',
+        url: '/channels',
+        icon: Zap,
+        permissions: ['content:schedule', 'content:view', 'admin:all']
+      },
+      {
+        title: 'YouTube',
+        url: '/vlogs',
+        icon: Youtube,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'LinkedIn',
+        url: '/linkedin',
+        icon: LinkedinIcon,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'Newsletters',
+        url: '/newsletters',
+        icon: Mail,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      },
+      {
+        title: 'Lead Magnets',
+        url: '/lead-magnets',
+        icon: Download,
+        permissions: ['content:create', 'content:view', 'admin:all']
+      }
+    ]
   },
   {
-    title: 'Insight Extractor',
-    url: '/insights',
-    icon: Lightbulb,
-    permissions: ['insights:extract', 'admin:all']
+    title: 'Intelligence',
+    defaultOpen: false,
+    items: [
+      {
+        title: 'Insight Extractor',
+        url: '/insights',
+        icon: Lightbulb,
+        permissions: ['insights:extract', 'admin:all']
+      },
+      {
+        title: 'Analytics',
+        url: '/analytics',
+        icon: BarChart3,
+        permissions: ['reports:view', 'admin:all']
+      },
+      {
+        title: 'Digital Twins',
+        url: '/digital-twins',
+        icon: Bot,
+        permissions: ['content:view', 'admin:all']
+      }
+    ]
   },
   {
-    title: 'Pipeline Generator',
-    url: '/pipeline',
-    icon: Target,
-    permissions: ['leads:view', 'admin:all']
-  },
-  {
-    title: 'Multi-Channel Hub',
-    url: '/channels',
-    icon: Zap,
-    permissions: ['content:schedule', 'content:view', 'admin:all']
-  },
-  {
-    title: 'YouTube',
-    url: '/vlogs',
-    icon: Youtube,
-    permissions: ['content:create', 'content:view', 'admin:all']
-  },
-  {
-    title: 'CRM',
-    url: '/crm',
-    icon: Users,
-    permissions: ['crm:view', 'admin:all']
-  },
-  {
-    title: 'LinkedIn',
-    url: '/linkedin',
-    icon: LinkedinIcon,
-    permissions: ['content:create', 'content:view', 'admin:all']
-  },
-  {
-    title: 'Newsletters',
-    url: '/newsletters',
-    icon: Mail,
-    permissions: ['content:create', 'content:view', 'admin:all']
-  },
-  {
-    title: 'Lead Magnets',
-    url: '/lead-magnets',
-    icon: Download,
-    permissions: ['content:create', 'content:view', 'admin:all']
-  },
-  {
-    title: 'Analytics',
-    url: '/analytics',
-    icon: BarChart3,
-    permissions: ['reports:view', 'admin:all']
-  },
+    title: 'Business',
+    defaultOpen: false,
+    items: [
+      {
+        title: 'CRM',
+        url: '/crm',
+        icon: Users,
+        permissions: ['crm:view', 'admin:all']
+      },
+      {
+        title: 'Pipeline',
+        url: '/pipeline',
+        icon: Target,
+        permissions: ['leads:view', 'admin:all']
+      },
+      {
+        title: 'Personal Brands',
+        url: '/personal-brands',
+        icon: User,
+        permissions: ['content:view', 'admin:all']
+      }
+    ]
+  }
+];
+
+const managementItems: NavItem[] = [
   {
     title: 'Team',
     url: '/team',
     icon: Users,
     permissions: ['users:manage', 'admin:all']
-  },
-  {
-    title: 'Content Library',
-    url: '/library',
-    icon: Brain,
-    permissions: ['content:view', 'admin:all']
-  },
-  {
-    title: 'Digital Twins',
-    url: '/digital-twins',
-    icon: Bot,
-    permissions: ['content:view', 'admin:all']
-  },
-  {
-    title: 'Personal Brands',
-    url: '/personal-brands',
-    icon: User,
-    permissions: ['content:view', 'admin:all']
   },
   {
     title: 'Settings',
@@ -143,10 +178,20 @@ export function AppSidebar() {
   const location = useLocation();
   const { hasPermission, user } = useAuth();
   const currentPath = location.pathname;
-
-  const visibleItems = navigationItems.filter(item => 
-    item.permissions.some(permission => hasPermission(permission))
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
+    navigationGroups.reduce((acc, group) => ({
+      ...acc,
+      [group.title]: group.defaultOpen ?? false
+    }), {})
   );
+
+  const toggleGroup = (groupTitle: string) => {
+    if (collapsed) return;
+    setOpenGroups(prev => ({
+      ...prev,
+      [groupTitle]: !prev[groupTitle]
+    }));
+  };
 
   const isActive = (path: string) => {
     if (path === '/') return currentPath === path;
@@ -157,6 +202,9 @@ export function AppSidebar() {
     active 
       ? "bg-primary/10 text-primary border-r-2 border-primary font-medium" 
       : "hover:bg-muted/60 text-muted-foreground hover:text-foreground";
+
+  const hasGroupPermission = (items: NavItem[]) =>
+    items.some(item => item.permissions.some(permission => hasPermission(permission)));
 
   return (
     <Sidebar className={`${collapsed ? "w-14" : "w-64"} border-r border-border/60`}>
@@ -176,41 +224,101 @@ export function AppSidebar() {
           </div>
         )}
 
-        <SidebarGroup>
-          {!collapsed && (
-            <SidebarGroupLabel className="px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {user?.role === 'client' ? 'Your Content' : 'Core Modules'}
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-3">
-              {visibleItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={({ isActive: active }) => 
-                        `flex items-center space-x-3 px-3 py-2 rounded-lg smooth-transition ${getNavClassName(active || isActive(item.url))}`
-                      }
-                    >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {!collapsed && (
-                        <span className="font-medium text-sm truncate">
-                          {item.title}
-                        </span>
-                      )}
-                      {!collapsed && item.badge && (
-                        <span className="ml-auto text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Navigation Groups */}
+        <div className="space-y-1">
+          {navigationGroups.map((group) => {
+            if (!hasGroupPermission(group.items)) return null;
+            
+            const visibleItems = group.items.filter(item => 
+              item.permissions.some(permission => hasPermission(permission))
+            );
+
+            const isGroupOpen = openGroups[group.title];
+            const hasActiveItem = visibleItems.some(item => isActive(item.url));
+
+            return (
+              <SidebarGroup key={group.title}>
+                {!collapsed && (
+                  <SidebarGroupLabel 
+                    className="px-6 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors flex items-center justify-between"
+                    onClick={() => toggleGroup(group.title)}
+                  >
+                    <span>{group.title}</span>
+                    {isGroupOpen ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                  </SidebarGroupLabel>
+                )}
+                
+                <SidebarGroupContent 
+                  className={`overflow-hidden transition-all duration-200 ${
+                    collapsed || isGroupOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <SidebarMenu className="space-y-1 px-3">
+                    {visibleItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <NavLink 
+                            to={item.url} 
+                            className={({ isActive: active }) => 
+                              `flex items-center space-x-3 px-3 py-2 rounded-lg smooth-transition ${getNavClassName(active || isActive(item.url))}`
+                            }
+                          >
+                            <item.icon className="h-4 w-4 flex-shrink-0" />
+                            {!collapsed && (
+                              <span className="font-medium text-sm truncate">
+                                {item.title}
+                              </span>
+                            )}
+                            {!collapsed && item.badge && (
+                              <span className="ml-auto text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
+        </div>
+
+        {/* Management Items */}
+        <div className="mt-4">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1 px-3">
+                {managementItems
+                  .filter(item => item.permissions.some(permission => hasPermission(permission)))
+                  .map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink 
+                          to={item.url} 
+                          className={({ isActive: active }) => 
+                            `flex items-center space-x-3 px-3 py-2 rounded-lg smooth-transition ${getNavClassName(active || isActive(item.url))}`
+                          }
+                        >
+                          <item.icon className="h-4 w-4 flex-shrink-0" />
+                          {!collapsed && (
+                            <span className="font-medium text-sm truncate">
+                              {item.title}
+                            </span>
+                          )}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
 
         {/* User Role Badge */}
         {!collapsed && user && (
