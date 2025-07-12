@@ -19,7 +19,6 @@ import LinkedIn from "./pages/LinkedIn";
 import ContentLibrary from "./pages/ContentLibrary";
 import PersonalBrands from "./pages/PersonalBrands";
 import AIChat from "./pages/AIChat";
-import Services from "./pages/Services";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound";
 
@@ -53,7 +52,6 @@ function ProtectedRoutes() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="library" element={<ContentLibrary />} />
           <Route path="ai-chat" element={<AIChat />} />
-          <Route path="services" element={<Services />} />
           <Route path="personal-brands" element={<PersonalBrands />} />
           <Route path="*" element={<NotFound />} />
         </Route>
