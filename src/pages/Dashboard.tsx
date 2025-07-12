@@ -100,7 +100,7 @@ export default function Dashboard() {
     }
   };
 
-  const content = roleSpecificContent[user?.role || 'strategist'];
+  const content = roleSpecificContent['strategist']; // Default to strategist content for all users
 
   return (
     <div className="space-y-8">
