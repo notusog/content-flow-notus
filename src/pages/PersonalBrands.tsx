@@ -80,13 +80,53 @@ const mockWorkspaces: Workspace[] = [
     id: 'personal-workspace',
     name: 'Personal Brands',
     type: 'personal',
-    members: ['marvin-sangines'],
-    personalBrands: ['marvin-sangines'],
+    members: ['marvin-sangines', 'vicktoria-klich'],
+    personalBrands: ['marvin-sangines', 'vicktoria-klich'],
     description: 'Individual personal brand management'
   }
 ];
 
 const mockPersonalBrands: PersonalBrand[] = [
+  {
+    id: 'vicktoria-klich',
+    name: 'Vicktoria Klich',
+    role: 'Co-founder & Web3 Expert',
+    company: 'w3.group',
+    avatar: '/lovable-uploads/76a444dc-5aff-491b-bbfc-670b6193d6c7.png',
+    bio: 'Changing the way people think about web3 | Co-founder w3.group | Based in Berlin | Top Voice on LinkedIn with 20,406 followers',
+    toneOfVoice: ['Innovative', 'Web3-focused', 'Educational', 'Thought-leadership', 'Accessible'],
+    approvedContent: [
+      {
+        id: 'vk1',
+        content: 'Web3 isn\'t just about crypto. It\'s about reimagining how we interact, own, and create value online. At w3.group, we\'re building the infrastructure for this new internet. The future is decentralized, and it\'s happening now.',
+        engagement: 2100,
+        date: '2024-01-16',
+        tags: ['web3', 'decentralization', 'innovation', 'future-tech'],
+        approved: true
+      },
+      {
+        id: 'vk2',
+        content: 'After 2+ years building in the web3 space, here\'s what I\'ve learned: The technology is complex, but the vision is simple - give people back control of their digital lives. That\'s what drives us every day at w3.group.',
+        engagement: 1650,
+        date: '2024-01-15',
+        tags: ['web3', 'digital-ownership', 'entrepreneurship', 'vision'],
+        approved: true
+      }
+    ],
+    llmSettings: {
+      primaryModel: 'Claude 3.5 Sonnet',
+      temperature: 0.7,
+      maxTokens: 500,
+      systemPrompt: 'You are Vicktoria Klich (vickchick030), co-founder of w3.group and web3 thought leader. Write with passion about web3, decentralization, and digital innovation. Make complex concepts accessible and always connect to real-world impact. Use an innovative yet educational tone.'
+    },
+    metrics: {
+      postsGenerated: 28,
+      engagementRate: 6.8,
+      followers: 20406,
+      contentScore: 9.2
+    },
+    lastUpdated: '2024-01-16'
+  },
   {
     id: 'marvin-sangines',
     name: 'Marvin Sangines',
