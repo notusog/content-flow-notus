@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContent } from '@/contexts/ContentContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -339,6 +341,7 @@ interface AddSourceFormProps {
 }
 
 function AddSourceForm({ onSubmit, onCancel }: AddSourceFormProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: '',
     type: 'article' as const,
@@ -349,7 +352,7 @@ function AddSourceForm({ onSubmit, onCancel }: AddSourceFormProps) {
     file: null as File | null
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, file }));
@@ -359,8 +362,62 @@ function AddSourceForm({ onSubmit, onCancel }: AddSourceFormProps) {
         setFormData(prev => ({ ...prev, title: file.name.split('.')[0] }));
       }
       
-      // Read file content for text files
-      if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+      // Check if it's an audio/video file for transcription
+      const audioVideoExtensions = ['m4a', 'mp3', 'wav', 'mp4', 'mov', 'avi'];
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      
+      if (fileExtension && audioVideoExtensions.includes(fileExtension)) {
+        try {
+          toast({
+            title: "Transcribing audio...",
+            description: "Please wait while we transcribe your audio file.",
+          });
+
+          // Convert file to base64
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            const arrayBuffer = event.target?.result as ArrayBuffer;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const base64 = btoa(String.fromCharCode(...uint8Array));
+
+            try {
+              // Call transcription edge function
+              const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+                body: { 
+                  audio: base64,
+                  filename: file.name
+                }
+              });
+
+              if (error) throw error;
+
+              if (data?.text) {
+                setFormData(prev => ({ ...prev, content: data.text }));
+                toast({
+                  title: "Transcription complete!",
+                  description: "Audio has been transcribed successfully.",
+                });
+              }
+            } catch (error) {
+              console.error('Transcription error:', error);
+              toast({
+                title: "Transcription failed",
+                description: "Could not transcribe audio. You can add content manually.",
+                variant: "destructive",
+              });
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        } catch (error) {
+          console.error('File reading error:', error);
+          toast({
+            title: "File error",
+            description: "Could not read the audio file.",
+            variant: "destructive",
+          });
+        }
+      } else if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        // Handle text files as before
         const reader = new FileReader();
         reader.onload = (event) => {
           const content = event.target?.result as string;
