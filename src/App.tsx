@@ -14,7 +14,8 @@ import PipelineGenerator from "./pages/PipelineGenerator";
 import MultiChannelHub from "./pages/MultiChannelHub";
 import Analytics from "./pages/Analytics";
 import LeadMagnets from "./pages/LeadMagnets";
-import YouTubeVlogs from "./pages/YouTubeVlogs";
+import YouTube from "./pages/YouTube";
+import CRM from "./pages/CRM";
 import LinkedIn from "./pages/LinkedIn";
 import Newsletters from "./pages/Newsletters";
 import TeamManagement from "./pages/TeamManagement";
@@ -51,7 +52,8 @@ function ProtectedRoutes() {
           <Route path="insights" element={<InsightExtractor />} />
           <Route path="pipeline" element={<PipelineGenerator />} />
           <Route path="channels" element={<MultiChannelHub />} />
-          <Route path="vlogs" element={<YouTubeVlogs />} />
+          <Route path="vlogs" element={<YouTube />} />
+          <Route path="crm" element={<CRM />} />
           <Route path="linkedin" element={<LinkedIn />} />
           <Route path="newsletters" element={<Newsletters />} />
           <Route path="lead-magnets" element={<LeadMagnets />} />

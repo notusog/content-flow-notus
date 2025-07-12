@@ -36,7 +36,7 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-const YouTubeVlogs = () => {
+const YouTube = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -129,7 +129,7 @@ const YouTubeVlogs = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">YouTube Vlogs</h1>
+          <h1 className="text-3xl font-bold text-foreground">YouTube</h1>
           <p className="text-muted-foreground">Create and manage video content for your channels</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -618,4 +618,4 @@ const YouTubeVlogs = () => {
   );
 };
 
-export default YouTubeVlogs;
+export default YouTube;

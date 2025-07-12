@@ -70,10 +70,16 @@ const navigationItems: NavItem[] = [
     permissions: ['content:schedule', 'content:view', 'admin:all']
   },
   {
-    title: 'YouTube Vlogs',
+    title: 'YouTube',
     url: '/vlogs',
     icon: Youtube,
     permissions: ['content:create', 'content:view', 'admin:all']
+  },
+  {
+    title: 'CRM',
+    url: '/crm',
+    icon: Users,
+    permissions: ['crm:view', 'admin:all']
   },
   {
     title: 'LinkedIn',
