@@ -72,20 +72,33 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
   const config = channelConfigs[channel];
 
   const parseCSV = (text: string): any[] => {
-    const lines = text.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
+    try {
+      // Remove any BOM or non-printable characters
+      const cleanText = text.replace(/^\uFEFF/, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+      
+      const lines = cleanText.split('\n').filter(line => line.trim());
+      if (lines.length < 2) return [];
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const data = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
+      // Parse headers with proper CSV handling
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      
+      const data = lines.slice(1).map(line => {
+        // Basic CSV parsing - handle quotes properly
+        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const row: any = {};
+        headers.forEach((header, index) => {
+          const value = values[index] || '';
+          // Clean any remaining problematic characters
+          row[header] = value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+        });
+        return row;
       });
-      return row;
-    });
 
-    return data;
+      return data.filter(row => Object.values(row).some(val => val !== ''));
+    } catch (error) {
+      console.error('CSV parsing error:', error);
+      throw new Error('Invalid CSV format');
+    }
   };
 
   const saveToDatabase = async (data: any[], filename: string) => {
@@ -124,16 +137,29 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
         });
       } else {
         // Save as analytics report for analytics channels
+        const cleanData = data.map(row => {
+          const cleanRow: any = {};
+          Object.keys(row).forEach(key => {
+            const value = row[key];
+            // Ensure all values are properly cleaned and JSON-safe
+            cleanRow[key] = typeof value === 'string' 
+              ? value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+              : value;
+          });
+          return cleanRow;
+        });
+
         const { error } = await supabase
           .from('analytics_reports')
           .insert({
             report_name: filename,
             report_type: channel,
             data_source: 'csv_upload',
-            csv_data: data,
-            raw_csv_text: JSON.stringify(data),
+            csv_data: cleanData,
             user_id: user.id,
-            workspace_id: currentWorkspace.id
+            workspace_id: currentWorkspace.id,
+            date_range_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            date_range_end: new Date().toISOString().split('T')[0]
           });
 
         if (error) throw error;
