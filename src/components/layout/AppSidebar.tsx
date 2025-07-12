@@ -24,7 +24,8 @@ import {
   Youtube,
   Mail,
   Download,
-  LinkedinIcon
+  LinkedinIcon,
+  Brain
 } from 'lucide-react';
 
 interface NavItem {
@@ -101,6 +102,12 @@ const navigationItems: NavItem[] = [
     url: '/team',
     icon: Users,
     permissions: ['users:manage', 'admin:all']
+  },
+  {
+    title: 'Content Library',
+    url: '/library',
+    icon: Brain,
+    permissions: ['content:view', 'admin:all']
   },
   {
     title: 'Settings',
@@ -198,9 +205,9 @@ export function AppSidebar() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium truncate">{user.name}</p>
                   <p className="text-xs text-muted-foreground capitalize">
-                    {user.role === 'strategist' ? 'Strategist' : 
+                     {user.role === 'strategist' ? 'Strategist' : 
                      user.role === 'leadership' ? 'Architect' :
-                     user.role === 'gtm' ? 'Closer' : 'Visionary'}
+                     user.role === 'gtm' ? 'Setter' : 'Visionary'}
                   </p>
                 </div>
               </div>

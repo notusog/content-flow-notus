@@ -19,6 +19,7 @@ import LinkedIn from "./pages/LinkedIn";
 import Newsletters from "./pages/Newsletters";
 import TeamManagement from "./pages/TeamManagement";
 import Settings from "./pages/Settings";
+import ContentLibrary from "./pages/ContentLibrary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ function ProtectedRoutes() {
           <Route path="lead-magnets" element={<LeadMagnets />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="team" element={<TeamManagement />} />
+          <Route path="library" element={<ContentLibrary />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>

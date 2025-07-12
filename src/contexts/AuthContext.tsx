@@ -13,30 +13,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const DEMO_USERS: User[] = [
   {
     id: '1',
-    name: 'Sarah Chen',
-    email: 'sarah@notus.com',
+    name: 'Content Strategist',
+    email: 'contentstrategist@notus.com',
     role: 'strategist',
     avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=100&h=100&fit=crop&crop=face'
   },
   {
     id: '2',
-    name: 'Marcus Johnson',
-    email: 'marcus@techcorp.com',
+    name: 'Client Visionary',
+    email: 'client@company.com',
     role: 'client',
-    clientId: 'client-1',
+    clientId: 'company-1',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
   },
   {
     id: '3',
-    name: 'Elena Rodriguez',
-    email: 'elena@notus.com',
+    name: 'GTM Setter',
+    email: 'setter@sales.com',
     role: 'gtm',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face'
   },
   {
     id: '4',
-    name: 'David Kim',
-    email: 'david@notus.com',
+    name: 'Leadership Architect',
+    email: 'leader@notus.com',
     role: 'leadership',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
   }
@@ -72,7 +72,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     // Demo authentication - in production this would hit your auth API
     const user = DEMO_USERS.find(u => u.email === email);
-    if (user && password === 'demo123') {
+    
+    // Check multiple password options for flexibility
+    const validPasswords = ['demo123', 'strategist123', 'client123', 'setter123', 'leader123'];
+    
+    if (user && validPasswords.includes(password)) {
       localStorage.setItem('notus-user', JSON.stringify(user));
       setAuthState({
         user,

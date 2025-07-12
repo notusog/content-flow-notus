@@ -27,7 +27,7 @@ export const ROLE_PERMISSIONS = {
     permissions: ['content:view', 'content:approve', 'content:comment', 'reports:view']
   },
   gtm: {
-    name: 'GTM Closer',
+    name: 'GTM Setter',
     description: 'Access to lead scoring and pipeline tasks',
     permissions: ['leads:view', 'tasks:complete', 'pipeline:access']
   },

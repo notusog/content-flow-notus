@@ -11,15 +11,15 @@ A sophisticated content strategy and creation platform designed for professional
 ### Demo Accounts (Ready to Use)
 
 **Content Strategist** (Full Access)
-- Email: `sarah@notus.com`
+- Email: `contentstrategist@notus.com`
 - Password: `strategist123`
 
 **Client Visionary** (Read-Only Dashboard)
 - Email: `client@company.com`
 - Password: `client123`
 
-**GTM Closer** (Lead Management)
-- Email: `closer@sales.com`
+**GTM Setter** (Lead Management)
+- Email: `setter@sales.com`
 - Password: `gtm123`
 
 **Leadership Architect** (Admin Access)
