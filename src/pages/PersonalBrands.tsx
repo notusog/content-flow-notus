@@ -1632,19 +1632,3 @@ function AddSourceForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Conten
     </form>
   );
 }
-
-      {/* Content Generation Dialog */}
-      <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Generate Content</DialogTitle>
-            <DialogDescription>
-              Create content ideas or platform-specific content using your personal brand
-            </DialogDescription>
-          </DialogHeader>
-          <ContentGenerationForm onClose={() => setIsGenerateOpen(false)} />
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
