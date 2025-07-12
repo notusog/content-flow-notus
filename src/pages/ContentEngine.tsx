@@ -47,24 +47,23 @@ const sourceTypeIcons = {
 
 export default function ContentEngine() {
   const { user, hasPermission } = useAuth();
-  const { sources, pieces, addSource, addPiece, generateContentFromSources } = useContent();
+  const { sources, pieces, loading, addSource, addPiece, generateContentFromSources } = useContent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
 
-  // Filter sources based on user's client and search
+  // Filter sources based on search
   const filteredSources = sources.filter(source => {
-    if (source.clientId !== user?.clientId) return false;
     if (searchQuery && !source.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !source.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (selectedTags.length > 0 && !selectedTags.some(tag => source.tags.includes(tag))) return false;
     return true;
   });
 
-  // Filter pieces based on user's client
-  const filteredPieces = pieces.filter(piece => piece.clientId === user?.clientId);
+  // All pieces are already filtered by RLS
+  const filteredPieces = pieces;
 
   // Get all unique tags
   const allTags = [...new Set(sources.flatMap(source => source.tags))];
@@ -100,7 +99,7 @@ export default function ContentEngine() {
                 </DialogHeader>
                 <AddSourceForm 
                   onSubmit={(data) => {
-                    addSource({ ...data, clientId: user?.clientId || 'default' });
+                    addSource(data);
                     setIsAddSourceOpen(false);
                   }}
                   onCancel={() => setIsAddSourceOpen(false)}

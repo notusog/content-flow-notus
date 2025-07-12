@@ -1,14 +1,17 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ContentSource, ContentPiece } from '@/types/content';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ContentContextType {
   sources: ContentSource[];
   pieces: ContentPiece[];
-  addSource: (source: Omit<ContentSource, 'id' | 'dateAdded'>) => void;
-  addPiece: (piece: Omit<ContentPiece, 'id' | 'createdDate'>) => void;
-  updatePiece: (id: string, updates: Partial<ContentPiece>) => void;
-  deletePiece: (id: string) => void;
-  generateContentFromSources: (sourceIds: string[], platform: string, prompt?: string) => void;
+  loading: boolean;
+  addSource: (source: Omit<ContentSource, 'id' | 'dateAdded' | 'clientId'>) => Promise<void>;
+  addPiece: (piece: Omit<ContentPiece, 'id' | 'createdDate' | 'clientId'>) => Promise<void>;
+  updatePiece: (id: string, updates: Partial<ContentPiece>) => Promise<void>;
+  deletePiece: (id: string) => Promise<void>;
+  generateContentFromSources: (sourceIds: string[], platform: string, prompt?: string) => Promise<void>;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -21,105 +24,257 @@ export const useContent = () => {
   return context;
 };
 
-const sampleSources: ContentSource[] = [
-  {
-    id: '1',
-    title: 'AI Industry Report 2024',
-    type: 'article',
-    content: 'Comprehensive analysis of AI trends and adoption in enterprise...',
-    summary: 'Key insights on AI transformation in business',
-    tags: ['AI', 'enterprise', 'trends'],
-    source: 'McKinsey',
-    dateAdded: '2024-01-15',
-    clientId: 'client-1',
-    insights: ['70% increase in AI adoption', 'ROI improvement of 15%'],
-    relatedTopics: ['automation', 'digital transformation']
-  },
-  {
-    id: '2',
-    title: 'Sales Strategy Meeting Notes',
-    type: 'note',
-    content: 'Discussion on Q2 goals, pipeline optimization, and team performance...',
-    summary: 'Strategic planning for sales growth',
-    tags: ['sales', 'strategy', 'Q2'],
-    source: 'Internal Meeting',
-    dateAdded: '2024-01-20',
-    clientId: 'client-1',
-    insights: ['Focus on mid-market segment', 'Improve lead qualification'],
-    relatedTopics: ['pipeline', 'lead generation']
-  }
-];
-
-const samplePieces: ContentPiece[] = [
-  {
-    id: '1',
-    title: 'AI Transformation in Enterprise',
-    content: 'The future of business lies in AI adoption...',
-    platform: 'linkedin',
-    sourceIds: ['1'],
-    tags: ['AI', 'enterprise'],
-    status: 'draft',
-    createdDate: '2024-01-22',
-    clientId: 'client-1'
-  }
-];
-
 export const ContentProvider = ({ children }: { children: ReactNode }) => {
-  const [sources, setSources] = useState<ContentSource[]>(sampleSources);
-  const [pieces, setPieces] = useState<ContentPiece[]>(samplePieces);
+  const [sources, setSources] = useState<ContentSource[]>([]);
+  const [pieces, setPieces] = useState<ContentPiece[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const addSource = (sourceData: Omit<ContentSource, 'id' | 'dateAdded'>) => {
-    const newSource: ContentSource = {
-      ...sourceData,
-      id: Date.now().toString(),
-      dateAdded: new Date().toISOString().split('T')[0]
-    };
-    setSources(prev => [...prev, newSource]);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [sourcesResult, piecesResult] = await Promise.all([
+        supabase.from('content_sources').select('*').order('created_at', { ascending: false }),
+        supabase.from('content_pieces').select('*').order('created_at', { ascending: false })
+      ]);
+
+      if (sourcesResult.data) {
+        const mappedSources = sourcesResult.data.map(item => ({
+          id: item.id,
+          title: item.title,
+          type: item.type as ContentSource['type'],
+          content: item.content,
+          summary: item.summary || '',
+          tags: item.tags || [],
+          source: item.source || '',
+          dateAdded: item.created_at.split('T')[0],
+          clientId: item.user_id,
+          insights: item.insights || [],
+          relatedTopics: item.related_topics || []
+        }));
+        setSources(mappedSources);
+      }
+
+      if (piecesResult.data) {
+        const mappedPieces = piecesResult.data.map(item => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          platform: item.platform,
+          sourceIds: item.source_ids || [],
+          tags: item.tags || [],
+          status: item.status as ContentPiece['status'],
+          createdDate: item.created_at.split('T')[0],
+          clientId: item.user_id
+        }));
+        setPieces(mappedPieces);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load content data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addPiece = (pieceData: Omit<ContentPiece, 'id' | 'createdDate'>) => {
-    const newPiece: ContentPiece = {
-      ...pieceData,
-      id: Date.now().toString(),
-      createdDate: new Date().toISOString().split('T')[0]
-    };
-    setPieces(prev => [...prev, newPiece]);
+  const addSource = async (sourceData: Omit<ContentSource, 'id' | 'dateAdded' | 'clientId'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('content_sources')
+        .insert({
+          title: sourceData.title,
+          type: sourceData.type,
+          content: sourceData.content,
+          summary: sourceData.summary,
+          tags: sourceData.tags,
+          source: sourceData.source,
+          insights: sourceData.insights,
+          related_topics: sourceData.relatedTopics,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newSource: ContentSource = {
+        id: data.id,
+        title: data.title,
+        type: data.type as ContentSource['type'],
+        content: data.content,
+        summary: data.summary || '',
+        tags: data.tags || [],
+        source: data.source || '',
+        dateAdded: data.created_at.split('T')[0],
+        clientId: data.user_id,
+        insights: data.insights || [],
+        relatedTopics: data.related_topics || []
+      };
+
+      setSources(prev => [newSource, ...prev]);
+      toast({
+        title: "Success",
+        description: "Content source added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding source:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add content source",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updatePiece = (id: string, updates: Partial<ContentPiece>) => {
-    setPieces(prev => prev.map(piece => 
-      piece.id === id ? { ...piece, ...updates } : piece
-    ));
+  const addPiece = async (pieceData: Omit<ContentPiece, 'id' | 'createdDate' | 'clientId'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('content_pieces')
+        .insert({
+          title: pieceData.title,
+          content: pieceData.content,
+          platform: pieceData.platform,
+          source_ids: pieceData.sourceIds,
+          tags: pieceData.tags,
+          status: pieceData.status,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newPiece: ContentPiece = {
+        id: data.id,
+        title: data.title,
+        content: data.content,
+        platform: data.platform,
+        sourceIds: data.source_ids || [],
+        tags: data.tags || [],
+        status: data.status as ContentPiece['status'],
+        createdDate: data.created_at.split('T')[0],
+        clientId: data.user_id
+      };
+
+      setPieces(prev => [newPiece, ...prev]);
+      toast({
+        title: "Success",
+        description: "Content piece added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding piece:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add content piece",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deletePiece = (id: string) => {
-    setPieces(prev => prev.filter(piece => piece.id !== id));
+  const updatePiece = async (id: string, updates: Partial<ContentPiece>) => {
+    try {
+      const { error } = await supabase
+        .from('content_pieces')
+        .update({
+          title: updates.title,
+          content: updates.content,
+          platform: updates.platform,
+          source_ids: updates.sourceIds,
+          tags: updates.tags,
+          status: updates.status
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPieces(prev => prev.map(piece => 
+        piece.id === id ? { ...piece, ...updates } : piece
+      ));
+
+      toast({
+        title: "Success",
+        description: "Content piece updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating piece:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update content piece",
+        variant: "destructive"
+      });
+    }
   };
 
-  const generateContentFromSources = (sourceIds: string[], platform: string, prompt?: string) => {
-    const selectedSources = sources.filter(source => sourceIds.includes(source.id));
-    const combinedContent = selectedSources.map(s => s.content).join(' ');
-    
-    // Simulate AI generation
-    const newPiece: ContentPiece = {
-      id: Date.now().toString(),
-      title: `Generated ${platform} content`,
-      content: `AI-generated content based on: ${selectedSources.map(s => s.title).join(', ')}`,
-      platform,
-      sourceIds,
-      tags: [...new Set(selectedSources.flatMap(s => s.tags))],
-      status: 'draft',
-      createdDate: new Date().toISOString().split('T')[0],
-      clientId: selectedSources[0]?.clientId || 'default'
-    };
-    
-    setPieces(prev => [...prev, newPiece]);
+  const deletePiece = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('content_pieces')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPieces(prev => prev.filter(piece => piece.id !== id));
+      toast({
+        title: "Success",
+        description: "Content piece deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting piece:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete content piece",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const generateContentFromSources = async (sourceIds: string[], platform: string, prompt?: string) => {
+    try {
+      const selectedSources = sources.filter(source => sourceIds.includes(source.id));
+      
+      // For now, create a simple generated content piece
+      const generatedContent = `AI-generated ${platform} content based on: ${selectedSources.map(s => s.title).join(', ')}`;
+      
+      await addPiece({
+        title: `Generated ${platform} content`,
+        content: generatedContent,
+        platform,
+        sourceIds,
+        tags: [...new Set(selectedSources.flatMap(s => s.tags))],
+        status: 'draft'
+      });
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate content",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
     <ContentContext.Provider value={{
       sources,
       pieces,
+      loading,
       addSource,
       addPiece,
       updatePiece,
