@@ -52,7 +52,7 @@ function ProtectedRoutes() {
           <Route path="insights" element={<InsightExtractor />} />
           <Route path="pipeline" element={<PipelineGenerator />} />
           <Route path="channels" element={<MultiChannelHub />} />
-          <Route path="vlogs" element={<YouTube />} />
+          <Route path="youtube" element={<YouTube />} />
           <Route path="crm" element={<CRM />} />
           <Route path="linkedin" element={<LinkedIn />} />
           <Route path="newsletters" element={<Newsletters />} />

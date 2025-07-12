@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Search, 
@@ -30,12 +31,13 @@ import {
 import { cn } from '@/lib/utils';
 
 const CRM = () => {
+  const { toast } = useToast();
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLabel, setSelectedLabel] = useState('all');
 
   // Sample data
-  const people = [
+  const [people, setPeople] = useState([
     {
       id: 1,
       name: "Sarah Johnson",
@@ -96,7 +98,7 @@ const CRM = () => {
       dealValue: 0,
       notes: "Personal connection"
     }
-  ];
+  ]);
 
   const pipelineStages = [
     { id: 'lead', name: 'Lead', count: 12, color: 'bg-blue-500' },
@@ -142,13 +144,27 @@ const CRM = () => {
   });
 
   const moveToPipeline = (personId: number) => {
-    console.log(`Moving person ${personId} to pipeline`);
-    // Implementation for moving to pipeline
+    setPeople(people.map(person => 
+      person.id === personId 
+        ? { ...person, label: 'hot-lead' }
+        : person
+    ));
+    toast({
+      title: "Contact moved to pipeline",
+      description: "Contact has been added to your sales pipeline.",
+    });
   };
 
   const removeFromPipeline = (personId: number) => {
-    console.log(`Removing person ${personId} from pipeline`);
-    // Implementation for removing from pipeline
+    setPeople(people.map(person => 
+      person.id === personId 
+        ? { ...person, label: 'contact' }
+        : person
+    ));
+    toast({
+      title: "Contact removed from pipeline",
+      description: "Contact has been moved back to general contacts.",
+    });
   };
 
   return (
