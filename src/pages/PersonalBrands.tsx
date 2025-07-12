@@ -285,7 +285,10 @@ export default function PersonalBrands() {
             Manage personal brand profiles and AI-powered content generation
           </p>
         </div>
-        <Button onClick={() => setIsCreatingBrand(true)}>
+        <Button onClick={() => {
+          console.log('Create Brand button clicked');
+          setIsCreatingBrand(true);
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Create Brand
         </Button>
