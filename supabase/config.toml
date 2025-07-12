@@ -52,3 +52,6 @@ verify_jwt = true
 
 [functions.csv-processor]
 verify_jwt = true
+
+[functions.content-archetype]
+verify_jwt = false

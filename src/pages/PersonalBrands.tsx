@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import ContentCallForm from '@/components/forms/ContentCallForm';
 import YouTubeContentForm from '@/components/forms/YouTubeContentForm';
+import ContentArchetypeForm from '@/components/forms/ContentArchetypeForm';
+import TranscriptContentGenerator from '@/components/forms/TranscriptContentGenerator';
 import { 
   User, 
   Plus, 
@@ -495,6 +497,8 @@ export default function PersonalBrands() {
   const [isAddingSource, setIsAddingSource] = useState(false);
   const [isAddingContentCall, setIsAddingContentCall] = useState(false);
   const [isAddingYouTubeContent, setIsAddingYouTubeContent] = useState(false);
+  const [isCreatingArchetype, setIsCreatingArchetype] = useState(false);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newBrand, setNewBrand] = useState({
@@ -719,6 +723,65 @@ export default function PersonalBrands() {
     toast({
       title: "YouTube Content Created",
       description: `Added ${youtubeData.title} with production assets and outline`,
+    });
+  };
+
+  const addContentArchetype = (archetypeData: any) => {
+    if (!selectedBrand) return;
+
+    const newArchetype: StrategyDocument = {
+      id: `archetype-${Date.now()}`,
+      type: 'content-archetype',
+      title: `Content Archetype - ${new Date().toLocaleDateString()}`,
+      content: archetypeData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const updatedBrand = {
+      ...selectedBrand,
+      strategyDocuments: [...selectedBrand.strategyDocuments, newArchetype]
+    };
+
+    setPersonalBrands(prev => prev.map(b => b.id === selectedBrand.id ? updatedBrand : b));
+    setIsCreatingArchetype(false);
+    
+    toast({
+      title: "Content Archetype Created",
+      description: "New content archetype added to brand strategy documents",
+    });
+  };
+
+  const generateContentWithTranscript = (contentData: { content: string; metadata: any }) => {
+    if (!selectedBrand) return;
+
+    const newContent: ContentPiece = {
+      id: `transcript-content-${Date.now()}`,
+      title: `AI Generated ${contentData.metadata.contentType} - ${contentData.metadata.platform}`,
+      content: contentData.content,
+      platform: contentData.metadata.platform,
+      sourceIds: [],
+      tags: [contentData.metadata.tone, contentData.metadata.platform.toLowerCase(), 'ai-generated'],
+      status: 'draft',
+      createdDate: new Date().toISOString().split('T')[0],
+      brandId: selectedBrand.id
+    };
+
+    const updatedBrand = {
+      ...selectedBrand,
+      generatedContent: [...selectedBrand.generatedContent, newContent],
+      metrics: {
+        ...selectedBrand.metrics,
+        postsGenerated: selectedBrand.metrics.postsGenerated + 1
+      }
+    };
+
+    setPersonalBrands(prev => prev.map(b => b.id === selectedBrand.id ? updatedBrand : b));
+    setIsGeneratingContent(false);
+    
+    toast({
+      title: "Content Generated",
+      description: `Generated ${contentData.metadata.contentType} for ${contentData.metadata.platform}`,
     });
   };
 
@@ -971,8 +1034,16 @@ export default function PersonalBrands() {
                       AI-powered content generation using your knowledge base and strategy
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => setIsAddingYouTubeContent(true)}>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button onClick={() => setIsGeneratingContent(true)}>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate with AI
+                    </Button>
+                    <Button onClick={() => setIsCreatingArchetype(true)} variant="outline">
+                      <Target className="mr-2 h-4 w-4" />
+                      Content Archetype
+                    </Button>
+                    <Button onClick={() => setIsAddingYouTubeContent(true)} variant="outline">
                       <Video className="mr-2 h-4 w-4" />
                       YouTube Content
                     </Button>
@@ -1416,6 +1487,41 @@ export default function PersonalBrands() {
             </DialogDescription>
           </DialogHeader>
           <YouTubeContentForm onSubmit={addYouTubeContent} onCancel={() => setIsAddingYouTubeContent(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Archetype Dialog */}
+      <Dialog open={isCreatingArchetype} onOpenChange={setIsCreatingArchetype}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Content Archetype Generator</DialogTitle>
+            <DialogDescription>
+              Create a comprehensive content strategy framework for this brand
+            </DialogDescription>
+          </DialogHeader>
+          <ContentArchetypeForm 
+            onSubmit={addContentArchetype} 
+            onCancel={() => setIsCreatingArchetype(false)}
+            clientName={selectedBrand?.name}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Content Generator Dialog */}
+      <Dialog open={isGeneratingContent} onOpenChange={setIsGeneratingContent}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>AI Content Generator</DialogTitle>
+            <DialogDescription>
+              Generate content using prompts and transcripts with your brand archetype
+            </DialogDescription>
+          </DialogHeader>
+          <TranscriptContentGenerator 
+            onSubmit={generateContentWithTranscript} 
+            onCancel={() => setIsGeneratingContent(false)}
+            brandName={selectedBrand?.name}
+            contentArchetype={selectedBrand?.strategyDocuments.find(d => d.type === 'content-archetype')?.content?.generatedArchetype}
+          />
         </DialogContent>
       </Dialog>
     </div>
