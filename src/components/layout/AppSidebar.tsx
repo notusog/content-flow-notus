@@ -16,21 +16,13 @@ import {
   LayoutDashboard, 
   FileText, 
   Zap, 
-  Users, 
   BarChart3, 
-  Settings,
-  Lightbulb,
-  Target,
   Youtube,
-  Mail,
-  Download,
   LinkedinIcon,
   Brain,
-  Bot,
   User,
   ChevronDown,
-  ChevronRight,
-  Briefcase
+  ChevronRight
 } from 'lucide-react';
 
 interface NavItem {
@@ -49,7 +41,7 @@ interface NavGroup {
 
 const navigationGroups: NavGroup[] = [
   {
-    title: 'Workspace',
+    title: 'Brands',
     defaultOpen: true,
     items: [
       {
@@ -59,9 +51,9 @@ const navigationGroups: NavGroup[] = [
         permissions: ['content:view', 'admin:all']
       },
       {
-        title: 'Workspace Manager',
-        url: '/workspace-manager',
-        icon: Briefcase,
+        title: 'Personal Brands',
+        url: '/personal-brands',
+        icon: User,
         permissions: ['content:view', 'admin:all']
       },
       {
@@ -69,24 +61,18 @@ const navigationGroups: NavGroup[] = [
         url: '/content',
         icon: FileText,
         permissions: ['content:create', 'content:view', 'admin:all']
-      },
+      }
+    ]
+  },
+  {
+    title: 'Library',
+    defaultOpen: false,
+    items: [
       {
         title: 'Content Library',
         url: '/library',
         icon: Brain,
         permissions: ['content:view', 'admin:all']
-      }
-    ]
-  },
-  {
-    title: 'Channels',
-    defaultOpen: false,
-    items: [
-      {
-        title: 'Multi-Channel Hub',
-        url: '/channels',
-        icon: Zap,
-        permissions: ['content:schedule', 'content:view', 'admin:all']
       },
       {
         title: 'YouTube',
@@ -99,85 +85,23 @@ const navigationGroups: NavGroup[] = [
         url: '/linkedin',
         icon: LinkedinIcon,
         permissions: ['content:create', 'content:view', 'admin:all']
-      },
-      {
-        title: 'Newsletters',
-        url: '/newsletters',
-        icon: Mail,
-        permissions: ['content:create', 'content:view', 'admin:all']
-      },
-      {
-        title: 'Lead Magnets',
-        url: '/lead-magnets',
-        icon: Download,
-        permissions: ['content:create', 'content:view', 'admin:all']
       }
     ]
   },
   {
-    title: 'Intelligence',
+    title: 'Analytics',
     defaultOpen: false,
     items: [
       {
-        title: 'Insight Extractor',
-        url: '/insights',
-        icon: Lightbulb,
-        permissions: ['insights:extract', 'admin:all']
-      },
-      {
-        title: 'Analytics',
+        title: 'Performance',
         url: '/analytics',
         icon: BarChart3,
         permissions: ['reports:view', 'admin:all']
-      },
-      {
-        title: 'Digital Twins',
-        url: '/digital-twins',
-        icon: Bot,
-        permissions: ['content:view', 'admin:all']
-      }
-    ]
-  },
-  {
-    title: 'Business',
-    defaultOpen: false,
-    items: [
-      {
-        title: 'CRM',
-        url: '/crm',
-        icon: Users,
-        permissions: ['crm:view', 'admin:all']
-      },
-      {
-        title: 'Pipeline',
-        url: '/pipeline',
-        icon: Target,
-        permissions: ['leads:view', 'admin:all']
-      },
-      {
-        title: 'Personal Brands',
-        url: '/personal-brands',
-        icon: User,
-        permissions: ['content:view', 'admin:all']
       }
     ]
   }
 ];
 
-const managementItems: NavItem[] = [
-  {
-    title: 'Team',
-    url: '/team',
-    icon: Users,
-    permissions: ['users:manage', 'admin:all']
-  },
-  {
-    title: 'Settings',
-    url: '/settings',
-    icon: Settings,
-    permissions: ['admin:all', 'content:view']
-  }
-];
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -292,34 +216,6 @@ export function AppSidebar() {
           })}
         </div>
 
-        {/* Management Items */}
-        <div className="mt-4">
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu className="space-y-1 px-3">
-                {managementItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink 
-                          to={item.url} 
-                          className={({ isActive: active }) => 
-                            `flex items-center space-x-3 px-3 py-2 rounded-lg smooth-transition ${getNavClassName(active || isActive(item.url))}`
-                          }
-                        >
-                          <item.icon className="h-4 w-4 flex-shrink-0" />
-                          {!collapsed && (
-                            <span className="font-medium text-sm truncate">
-                              {item.title}
-                            </span>
-                          )}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
 
         {/* User Info */}
         {!collapsed && user && (
