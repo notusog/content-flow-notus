@@ -29,15 +29,16 @@ import { cn } from '@/lib/utils';
 // Content Brief Form Schema
 const contentBriefSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  type: z.string().min(1, "Content type is required"),
+  channel: z.string().min(1, "Channel is required"),
+  contentType: z.string().min(1, "Content type is required"),
   client: z.string().min(1, "Client is required"),
   objectives: z.string().min(10, "Objectives must be at least 10 characters"),
   targetAudience: z.string().min(5, "Target audience is required"),
   keyMessages: z.string().min(10, "Key messages are required"),
   tone: z.string().min(1, "Tone is required"),
-  channels: z.array(z.string()).min(1, "At least one channel is required"),
   deadline: z.date(),
-  priority: z.string().min(1, "Priority is required")
+  priority: z.string().min(1, "Priority is required"),
+  attachments: z.array(z.string()).optional()
 });
 
 type ContentBriefForm = z.infer<typeof contentBriefSchema>;
@@ -63,20 +64,22 @@ interface ContentBriefDialogProps {
 export function ContentBriefDialog({ isOpen, onClose }: ContentBriefDialogProps) {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>();
-  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<string>("");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const form = useForm<ContentBriefForm>({
     resolver: zodResolver(contentBriefSchema),
     defaultValues: {
       title: "",
-      type: "",
+      channel: "",
+      contentType: "",
       client: "",
       objectives: "",
       targetAudience: "",
       keyMessages: "",
       tone: "",
-      channels: [],
-      priority: ""
+      priority: "",
+      attachments: []
     }
   });
 
@@ -101,27 +104,56 @@ export function ContentBriefDialog({ isOpen, onClose }: ContentBriefDialogProps)
     }
   };
 
-  const contentTypes = [
-    { value: "blog-post", label: "Blog Post" },
-    { value: "social-media", label: "Social Media Post" },
-    { value: "email", label: "Email Campaign" },
-    { value: "video-script", label: "Video Script" },
-    { value: "infographic", label: "Infographic" },
-    { value: "case-study", label: "Case Study" },
-    { value: "whitepaper", label: "Whitepaper" },
-    { value: "press-release", label: "Press Release" }
+  const channels = [
+    { value: "linkedin", label: "LinkedIn", icon: "💼" },
+    { value: "youtube", label: "YouTube", icon: "🎥" },
+    { value: "newsletter", label: "Newsletter", icon: "📧" },
+    { value: "instagram", label: "Instagram", icon: "📸" }
   ];
 
-  const channels = [
-    { value: "linkedin", label: "LinkedIn" },
-    { value: "twitter", label: "Twitter" },
-    { value: "facebook", label: "Facebook" },
-    { value: "instagram", label: "Instagram" },
-    { value: "youtube", label: "YouTube" },
-    { value: "blog", label: "Blog" },
-    { value: "email", label: "Email" },
-    { value: "website", label: "Website" }
-  ];
+  const getContentTypesForChannel = (channel: string) => {
+    switch (channel) {
+      case "linkedin":
+        return [
+          { value: "text-post", label: "Text Post" },
+          { value: "text-image", label: "Text + Image" },
+          { value: "text-video", label: "Text + Video" },
+          { value: "article", label: "LinkedIn Article" }
+        ];
+      case "youtube":
+        return [
+          { value: "vlog", label: "Vlog" },
+          { value: "tutorial", label: "Tutorial" },
+          { value: "interview", label: "Interview" },
+          { value: "shorts", label: "YouTube Shorts" }
+        ];
+      case "newsletter":
+        return [
+          { value: "weekly-roundup", label: "Weekly Roundup" },
+          { value: "industry-insights", label: "Industry Insights" },
+          { value: "product-updates", label: "Product Updates" },
+          { value: "educational", label: "Educational Newsletter" }
+        ];
+      case "instagram":
+        return [
+          { value: "reel", label: "Instagram Reel" },
+          { value: "story", label: "Instagram Story" },
+          { value: "post", label: "Feed Post" },
+          { value: "carousel", label: "Carousel Post" }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const tones = [
     { value: "professional", label: "Professional" },
@@ -172,18 +204,53 @@ export function ContentBriefDialog({ isOpen, onClose }: ContentBriefDialogProps)
 
                 <FormField
                   control={form.control}
-                  name="type"
+                  name="channel"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Content Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormLabel>Channel</FormLabel>
+                      <Select onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedChannel(value);
+                        form.setValue('contentType', ''); // Reset content type when channel changes
+                      }} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select content type" />
+                            <SelectValue placeholder="Select channel" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-background border border-border shadow-lg z-50">
-                          {contentTypes.map((type) => (
+                          {channels.map((channel) => (
+                            <SelectItem key={channel.value} value={channel.value}>
+                              <span className="flex items-center gap-2">
+                                {channel.icon} {channel.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contentType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Content Type</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        disabled={!selectedChannel}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={selectedChannel ? "Select content type" : "Select channel first"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-background border border-border shadow-lg z-50">
+                          {getContentTypesForChannel(selectedChannel).map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               {type.label}
                             </SelectItem>
@@ -366,6 +433,57 @@ export function ContentBriefDialog({ isOpen, onClose }: ContentBriefDialogProps)
                   </FormItem>
                 )}
               />
+              
+              {/* File Attachments */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="attachments">Attachments & Files</Label>
+                  <div className="mt-2">
+                    <input
+                      id="attachments"
+                      type="file"
+                      multiple
+                      accept="image/*,video/*,.pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload images, videos, or documents to attach to your content brief
+                    </p>
+                  </div>
+                </div>
+                
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Uploaded Files</Label>
+                    <div className="space-y-2">
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-6 h-6 bg-primary/10 rounded flex items-center justify-center">
+                              {file.type.startsWith('image/') ? '🖼️' : 
+                               file.type.startsWith('video/') ? '🎥' : '📄'}
+                            </div>
+                            <span className="text-sm truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({Math.round(file.size / 1024)} KB)
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                            className="h-6 w-6 p-0"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={onClose} className="flex-1">

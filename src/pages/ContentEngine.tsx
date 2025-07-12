@@ -14,18 +14,22 @@ import {
   Linkedin,
   Mail,
   Youtube,
+  Instagram,
   Download,
   Eye,
   CheckCircle,
   Clock,
   Edit,
-  Sparkles
+  Sparkles,
+  Image,
+  Video,
+  Type
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ContentBriefDialog, AIGenerationDialog } from '@/components/forms/ContentForms';
 
 type ContentStatus = 'idea' | 'draft' | 'review' | 'approved' | 'scheduled' | 'published';
-type ContentChannel = 'linkedin' | 'newsletter' | 'youtube' | 'lead-magnet';
+type ContentChannel = 'linkedin' | 'youtube' | 'newsletter' | 'instagram';
 
 interface ContentPiece {
   id: string;
@@ -41,17 +45,17 @@ interface ContentPiece {
 const sampleContent: ContentPiece[] = [
   {
     id: '1',
-    title: 'B2B Content Strategy Deep Dive',
+    title: 'AI Trends in B2B Sales - LinkedIn Post',
     channel: 'linkedin',
     status: 'review',
     client: 'TechCorp',
     dueDate: '2024-01-15',
     assignee: 'Sarah Chen',
-    description: 'Hook-Story-Takeaway format post about content strategy ROI'
+    description: 'Text + Image post about AI automation trends with infographic'
   },
   {
     id: '2',
-    title: 'Weekly Newsletter - Industry Insights',
+    title: 'Weekly Industry Newsletter',
     channel: 'newsletter',
     status: 'draft',
     client: 'SaaS Startup',
@@ -61,23 +65,43 @@ const sampleContent: ContentPiece[] = [
   },
   {
     id: '3',
-    title: 'Content Creation Mastery Vlog',
+    title: 'Content Creation Workflow Vlog',
     channel: 'youtube',
     status: 'scheduled',
     client: 'Growth Agency',
     dueDate: '2024-01-18',
     assignee: 'Sarah Chen',
-    description: '15-minute educational vlog on content creation workflows'
+    description: '15-minute educational vlog with thumbnail and description'
   },
   {
     id: '4',
-    title: 'Content Audit Checklist PDF',
-    channel: 'lead-magnet',
+    title: 'Behind the Scenes Reel',
+    channel: 'instagram',
     status: 'approved',
     client: 'Enterprise Co',
     dueDate: '2024-01-20',
     assignee: 'Sarah Chen',
-    description: 'Comprehensive 10-page checklist for content audits'
+    description: '30-second Instagram reel showing office culture'
+  },
+  {
+    id: '5',
+    title: 'LinkedIn Video Post - Product Demo',
+    channel: 'linkedin',
+    status: 'idea',
+    client: 'TechCorp',
+    dueDate: '2024-01-22',
+    assignee: 'Sarah Chen',
+    description: 'Text + Video post showcasing new product features'
+  },
+  {
+    id: '6',
+    title: 'Instagram Story Series',
+    channel: 'instagram',
+    status: 'draft',
+    client: 'Growth Agency',
+    dueDate: '2024-01-24',
+    assignee: 'Sarah Chen',
+    description: 'Multi-slide story series with tips and insights'
   }
 ];
 
@@ -94,7 +118,7 @@ const channelIcons = {
   linkedin: Linkedin,
   newsletter: Mail,
   youtube: Youtube,
-  'lead-magnet': Download
+  instagram: Instagram
 };
 
 export default function ContentEngine() {
@@ -170,9 +194,9 @@ export default function ContentEngine() {
         >
           <option value="all">All Channels</option>
           <option value="linkedin">LinkedIn</option>
-          <option value="newsletter">Newsletter</option>
           <option value="youtube">YouTube</option>
-          <option value="lead-magnet">Lead Magnets</option>
+          <option value="newsletter">Newsletter</option>
+          <option value="instagram">Instagram</option>
         </select>
 
         <Badge variant="outline" className="ml-auto">
