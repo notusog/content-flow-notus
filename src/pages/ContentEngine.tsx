@@ -69,7 +69,7 @@ export default function ContentEngine() {
 
   // Filter sources based on search and personal brand
   const filteredSources = sources.filter(source => {
-    if (currentPersonalBrand && source.personal_brand_id !== currentPersonalBrand.id) return false;
+    if (currentPersonalBrand && source.clientId !== currentPersonalBrand.id) return false;
     if (searchQuery && !source.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !source.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (selectedTags.length > 0 && !selectedTags.some(tag => source.tags?.includes(tag))) return false;
@@ -78,7 +78,7 @@ export default function ContentEngine() {
 
   // Filter pieces by personal brand  
   const filteredPieces = pieces.filter(piece => {
-    if (currentPersonalBrand && piece.personal_brand_id !== currentPersonalBrand.id) return false;
+    if (currentPersonalBrand && piece.clientId !== currentPersonalBrand.id) return false;
     return true;
   });
 
@@ -229,7 +229,7 @@ export default function ContentEngine() {
                                 {piece.platform}
                               </Badge>
                             )}
-                            {new Date(piece.created_at).toLocaleDateString()}
+                            {new Date(piece.createdDate).toLocaleDateString()}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex gap-1">
@@ -333,7 +333,7 @@ export default function ContentEngine() {
                           {source.type}
                         </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">{new Date(source.created_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(source.dateAdded).toLocaleDateString()}</span>
                     </div>
                     <CardTitle className="text-sm font-medium leading-tight">
                       {source.title}
@@ -440,7 +440,7 @@ export default function ContentEngine() {
                         ))}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">{new Date(piece.created_at).toLocaleDateString()}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(piece.createdDate).toLocaleDateString()}</span>
                         <div className="flex space-x-1">
                           <Button variant="ghost" size="sm">
                             <Eye className="h-3 w-3" />
