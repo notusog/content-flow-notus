@@ -95,11 +95,11 @@ export function GlobalSearch() {
       keywords: ['analytics', 'metrics', 'performance', 'roi', 'reports']
     },
     {
-      title: 'YouTube Vlogs',
+      title: 'YouTube',
       description: 'Manage video content',
-      action: () => navigate('/vlogs'),
+      action: () => navigate('/youtube'),
       icon: Youtube,
-      keywords: ['youtube', 'vlogs', 'videos', 'clips']
+      keywords: ['youtube', 'videos', 'clips']
     },
     {
       title: 'Newsletters',
