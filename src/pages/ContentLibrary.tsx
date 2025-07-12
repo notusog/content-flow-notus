@@ -486,6 +486,38 @@ function AddSourceForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Conten
         />
       </div>
 
+      {/* File Upload Section */}
+      <div>
+        <Label htmlFor="fileUpload">Upload File (Optional)</Label>
+        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+          <input
+            id="fileUpload"
+            type="file"
+            className="hidden"
+            accept=".pdf,.doc,.docx,.txt,.mp3,.mp4,.wav,.jpg,.jpeg,.png"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  source: file.name,
+                  content: `Uploaded file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+                }));
+              }
+            }}
+          />
+          <label htmlFor="fileUpload" className="cursor-pointer">
+            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Click to upload or drag and drop
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              PDF, DOC, TXT, MP3, MP4, WAV, JPG, PNG files
+            </p>
+          </label>
+        </div>
+      </div>
+
       <div>
         <Label htmlFor="summary">Summary</Label>
         <Textarea

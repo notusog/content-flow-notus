@@ -20,6 +20,8 @@ import Newsletters from "./pages/Newsletters";
 import TeamManagement from "./pages/TeamManagement";
 import Settings from "./pages/Settings";
 import ContentLibrary from "./pages/ContentLibrary";
+import DigitalTwins from "./pages/DigitalTwins";
+import PersonalBrands from "./pages/PersonalBrands";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,8 @@ function ProtectedRoutes() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="team" element={<TeamManagement />} />
           <Route path="library" element={<ContentLibrary />} />
+          <Route path="digital-twins" element={<DigitalTwins />} />
+          <Route path="personal-brands" element={<PersonalBrands />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>

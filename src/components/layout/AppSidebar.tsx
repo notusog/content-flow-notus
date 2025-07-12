@@ -25,7 +25,9 @@ import {
   Mail,
   Download,
   LinkedinIcon,
-  Brain
+  Brain,
+  Bot,
+  User
 } from 'lucide-react';
 
 interface NavItem {
@@ -107,6 +109,18 @@ const navigationItems: NavItem[] = [
     title: 'Content Library',
     url: '/library',
     icon: Brain,
+    permissions: ['content:view', 'admin:all']
+  },
+  {
+    title: 'Digital Twins',
+    url: '/digital-twins',
+    icon: Bot,
+    permissions: ['content:view', 'admin:all']
+  },
+  {
+    title: 'Personal Brands',
+    url: '/personal-brands',
+    icon: User,
     permissions: ['content:view', 'admin:all']
   },
   {
