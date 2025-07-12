@@ -388,7 +388,7 @@ function AddSourceForm({ onSubmit, onCancel }: AddSourceFormProps) {
         <Input
           type="file"
           onChange={handleFileChange}
-          accept=".txt,.md,.pdf,.doc,.docx,.csv"
+          accept=".txt,.md,.pdf,.doc,.docx,.csv,.m4a,.mp3,.wav,.mp4,.mov,.avi"
           className="file:mr-2 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
         />
         {formData.file && (
