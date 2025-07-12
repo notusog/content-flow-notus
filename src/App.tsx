@@ -17,6 +17,7 @@ import YouTube from "./pages/YouTube";
 import LinkedIn from "./pages/LinkedIn";
 import ContentLibrary from "./pages/ContentLibrary";
 import PersonalBrands from "./pages/PersonalBrands";
+import WorkspaceSetup from "./pages/WorkspaceSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ function ProtectedRoutes() {
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="workspace-setup" element={<WorkspaceSetup />} />
           <Route path="content" element={<ContentEngine />} />
           <Route path="youtube" element={<YouTube />} />
           <Route path="linkedin" element={<LinkedIn />} />

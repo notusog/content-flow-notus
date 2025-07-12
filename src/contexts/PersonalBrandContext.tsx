@@ -27,7 +27,7 @@ interface PersonalBrandContextType {
   currentPersonalBrand: PersonalBrand | null;
   loading: boolean;
   setCurrentPersonalBrand: (brand: PersonalBrand | null) => void;
-  createPersonalBrand: (data: { name: string; description?: string; bio?: string }) => Promise<void>;
+  createPersonalBrand: (data: { name: string; description?: string; bio?: string; expertise_areas?: string[]; tone_of_voice?: string; workspace_id: string }) => Promise<void>;
   updatePersonalBrand: (id: string, updates: Partial<PersonalBrand>) => Promise<void>;
   deletePersonalBrand: (id: string) => Promise<void>;
 }
@@ -88,8 +88,8 @@ export function PersonalBrandProvider({ children }: { children: ReactNode }) {
     fetchPersonalBrands();
   }, [user, currentWorkspace?.id]);
 
-  const createPersonalBrand = async (data: { name: string; description?: string; bio?: string }) => {
-    if (!user || !currentWorkspace) return;
+  const createPersonalBrand = async (data: { name: string; description?: string; bio?: string; expertise_areas?: string[]; tone_of_voice?: string; workspace_id: string }) => {
+    if (!user) return;
 
     try {
       const { data: brand, error } = await supabase
@@ -98,8 +98,10 @@ export function PersonalBrandProvider({ children }: { children: ReactNode }) {
           name: data.name,
           description: data.description || null,
           bio: data.bio || null,
+          expertise_areas: data.expertise_areas || [],
+          tone_of_voice: data.tone_of_voice || null,
           user_id: user.id,
-          workspace_id: currentWorkspace.id,
+          workspace_id: data.workspace_id,
         })
         .select()
         .single();

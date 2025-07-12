@@ -41,9 +41,15 @@ interface NavGroup {
 
 const navigationGroups: NavGroup[] = [
   {
-    title: 'Brands',
+    title: 'Setup',
     defaultOpen: true,
     items: [
+      {
+        title: 'Workspace Setup',
+        url: '/workspace-setup',
+        icon: LayoutDashboard,
+        permissions: ['content:view', 'admin:all']
+      },
       {
         title: 'Dashboard',
         url: '/',

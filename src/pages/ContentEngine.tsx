@@ -55,6 +55,8 @@ export default function ContentEngine() {
   const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [editingPiece, setEditingPiece] = useState(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Filter sources based on search
   const filteredSources = sources.filter(source => {
@@ -287,7 +289,14 @@ export default function ContentEngine() {
                             <Eye className="h-3 w-3" />
                           </Button>
                           {canEditContent && (
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setEditingPiece(piece);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
                               <Edit className="h-3 w-3" />
                             </Button>
                           )}
@@ -330,6 +339,33 @@ export default function ContentEngine() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Content Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Content</DialogTitle>
+            <DialogDescription>
+              Edit your generated content before publishing
+            </DialogDescription>
+          </DialogHeader>
+          {editingPiece && (
+            <EditContentForm 
+              piece={editingPiece}
+              onSave={(updatedPiece) => {
+                // Update the piece in the context/database
+                console.log('Saving updated piece:', updatedPiece);
+                setIsEditDialogOpen(false);
+                setEditingPiece(null);
+              }}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setEditingPiece(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -607,6 +643,124 @@ function GenerateContentForm({ sources, onGenerate, onCancel }: GenerateContentF
         <Button type="submit" disabled={selectedSources.length === 0 || !platform}>
           <Sparkles className="h-4 w-4 mr-2" />
           Generate Content
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Edit Content Form Component
+interface EditContentFormProps {
+  piece: any;
+  onSave: (piece: any) => void;
+  onCancel: () => void;
+}
+
+function EditContentForm({ piece, onSave, onCancel }: EditContentFormProps) {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    title: piece.title || '',
+    content: piece.content || '',
+    platform: piece.platform || '',
+    status: piece.status || 'draft',
+    tags: piece.tags ? piece.tags.join(', ') : ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const updatedPiece = {
+      ...piece,
+      ...formData,
+      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+      updatedDate: new Date().toISOString()
+    };
+
+    onSave(updatedPiece);
+    
+    toast({
+      title: "Content Updated",
+      description: "Your content has been saved successfully.",
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Title</label>
+          <Input
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="Content title..."
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Platform</label>
+          <Select 
+            value={formData.platform} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, platform: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="linkedin">LinkedIn</SelectItem>
+              <SelectItem value="youtube">YouTube</SelectItem>
+              <SelectItem value="newsletter">Newsletter</SelectItem>
+              <SelectItem value="instagram">Instagram</SelectItem>
+              <SelectItem value="blog">Blog</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Content</label>
+        <Textarea
+          value={formData.content}
+          onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+          placeholder="Your content..."
+          className="min-h-[200px]"
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Status</label>
+          <Select 
+            value={formData.status} 
+            onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="review">In Review</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Tags</label>
+          <Input
+            value={formData.tags}
+            onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+            placeholder="tag1, tag2, tag3..."
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Save Changes
         </Button>
       </div>
     </form>
