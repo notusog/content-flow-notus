@@ -234,7 +234,8 @@ export default function Onboarding() {
         description: "Your account is now fully set up.",
       });
 
-      navigate('/');
+      // Force a page refresh to ensure proper navigation
+      window.location.href = '/';
     } catch (error: any) {
       toast({
         title: "Error completing onboarding",
