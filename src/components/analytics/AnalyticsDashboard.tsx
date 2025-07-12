@@ -65,57 +65,68 @@ export default function AnalyticsDashboard() {
   const { currentWorkspace } = useWorkspace();
   const { toast } = useToast();
 
-  const processCSVDataForCharts = (reports: AnalyticsReport[]) => {
-    const processedData: ChartDataPoint[] = [];
+  const processChartData = (reports: AnalyticsReport[]) => {
+    const processedData: any[] = [];
     
     reports.forEach(report => {
       const csvData = Array.isArray(report.csv_data) ? report.csv_data : [];
       
       csvData.forEach((row: any) => {
-        // Skip header rows and corrupted data
         if (!row || typeof row !== 'object') return;
         
+        let date = '';
         let reach = 0;
         let engagement = 0;
-        let date = '';
+        let impressions = 0;
+        let followerGrowth = 0;
         
-        // Handle different CSV formats
-        const keys = Object.keys(row);
-        const values = Object.values(row);
-        
-        // Try to find date field
+        // Find date field - be more flexible with date formats
         for (const [key, value] of Object.entries(row)) {
-          if (typeof value === 'string' && (
-            value.includes('/') || 
-            value.includes('-') || 
-            key.toLowerCase().includes('date')
-          )) {
-            date = value;
-            break;
+          if (typeof value === 'string') {
+            if (key.toLowerCase().includes('date') || 
+                key.toLowerCase().includes('time') ||
+                value.match(/\d{1,2}\/\d{1,2}\/\d{4}/) ||
+                value.match(/\d{4}-\d{2}-\d{2}/)) {
+              date = value;
+              break;
+            }
           }
         }
         
-        // Process based on platform and available data
+        // Extract metrics based on platform with better field detection
         if (report.report_type === 'linkedin') {
-          // Handle LinkedIn follower data format
-          if (row['32049'] && typeof row['32049'] === 'string' && !isNaN(parseInt(row['32049']))) {
-            reach = parseInt(row['32049']) || 0; // New followers as reach
-            engagement = Math.floor(reach * 0.1); // Estimate engagement
-          }
-          // Handle standard LinkedIn metrics
-          else {
-            reach = parseInt(row.Impressions || row.impressions || '0');
-            engagement = (parseInt(row.Reactions || row.reactions || '0') + 
-                        parseInt(row.Comments || row.comments || '0') + 
-                        parseInt(row.Shares || row.shares || '0'));
-          }
+          // Look for impressions in various field names
+          impressions = parseInt(
+            row.Impressions || row.impressions || row['Impressions '] || 
+            row.Impressions_count || row.impression_count || 
+            row['Total impressions'] || row['Total Impressions'] || '0'
+          );
+          
+          // Look for follower growth
+          followerGrowth = parseInt(
+            row['New followers'] || row['new_followers'] || row.followers_gained ||
+            row['Follower growth'] || row['follower_growth'] || 
+            row['Net followers gained'] || row['32049'] || '0'
+          );
+          
+          // Calculate engagement from various sources
+          const likes = parseInt(row.Reactions || row.reactions || row.Likes || row.likes || '0');
+          const comments = parseInt(row.Comments || row.comments || '0');
+          const shares = parseInt(row.Shares || row.shares || row.Reposts || row.reposts || '0');
+          const clicks = parseInt(row.Clicks || row.clicks || row['Link clicks'] || '0');
+          
+          engagement = likes + comments + shares + clicks;
+          
+          // Use impressions as reach, fallback to follower growth
+          reach = impressions > 0 ? impressions : followerGrowth;
+          
         } else if (report.report_type === 'youtube') {
-          reach = parseInt(row.Views || row.views || '0');
+          reach = parseInt(row.Views || row.views || row['View count'] || '0');
           engagement = (parseInt(row.Likes || row.likes || '0') + 
                       parseInt(row.Comments || row.comments || '0'));
         } else if (report.report_type === 'newsletter') {
-          reach = parseInt(row.Opens || row.opens || '0');
-          engagement = parseInt(row.Clicks || row.clicks || '0');
+          reach = parseInt(row.Opens || row.opens || row['Open count'] || '0');
+          engagement = parseInt(row.Clicks || row.clicks || row['Click count'] || '0');
         }
 
         // Use report date if no date found in row
@@ -124,11 +135,13 @@ export default function AnalyticsDashboard() {
         }
 
         // Only add if we have meaningful data
-        if (reach > 0 || engagement > 0) {
+        if (reach > 0 || engagement > 0 || impressions > 0 || followerGrowth > 0) {
           processedData.push({
             date,
-            reach,
+            reach: reach || impressions,
             engagement,
+            impressions,
+            followerGrowth,
             platform: report.report_type
           });
         }
@@ -149,23 +162,32 @@ export default function AnalyticsDashboard() {
         
         let reach = 0;
         let engagement = 0;
+        let impressions = 0;
         let title = '';
         let date = '';
         
-        // Find title and date
+        // Find title and date with better detection
         for (const [key, value] of Object.entries(row)) {
           if (typeof value === 'string') {
-            if (key.toLowerCase().includes('title') || key.toLowerCase().includes('content')) {
+            if (key.toLowerCase().includes('title') || 
+                key.toLowerCase().includes('content') ||
+                key.toLowerCase().includes('post') ||
+                key.toLowerCase().includes('subject')) {
               title = value;
             }
-            if (value.includes('/') || value.includes('-') || key.toLowerCase().includes('date')) {
+            if (key.toLowerCase().includes('date') || 
+                key.toLowerCase().includes('time') ||
+                value.match(/\d{1,2}\/\d{1,2}\/\d{4}/) ||
+                value.match(/\d{4}-\d{2}-\d{2}/)) {
               date = value;
             }
           }
         }
         
         if (!title) {
-          title = row.Title || row.title || row['Post URL'] || row['Video Title'] || row['Subject Line'] || `${report.report_type} content ${index + 1}`;
+          title = row.Title || row.title || row['Post text'] || row['Post Text'] ||
+                 row['Post URL'] || row['Video Title'] || row['Subject Line'] || 
+                 row['Content'] || `${report.report_type} content ${index + 1}`;
         }
         
         if (!date) {
@@ -173,31 +195,40 @@ export default function AnalyticsDashboard() {
         }
         
         if (report.report_type === 'linkedin') {
-          if (row['32049'] && typeof row['32049'] === 'string' && !isNaN(parseInt(row['32049']))) {
+          // Look for impressions first
+          impressions = parseInt(
+            row.Impressions || row.impressions || row['Impressions '] || 
+            row['Total impressions'] || row['Total Impressions'] || '0'
+          );
+          
+          // If we have follower data instead
+          if (!impressions && row['32049'] && typeof row['32049'] === 'string' && !isNaN(parseInt(row['32049']))) {
             reach = parseInt(row['32049']) || 0;
             engagement = Math.floor(reach * 0.1);
-            title = `LinkedIn Followers Growth - ${row['Total followers on 7/12/2025:'] || date}`;
+            title = `LinkedIn Followers Growth - ${date}`;
           } else {
-            reach = parseInt(row.Impressions || row.impressions || '0');
-            engagement = (parseInt(row.Reactions || row.reactions || '0') + 
-                        parseInt(row.Comments || row.comments || '0') + 
-                        parseInt(row.Shares || row.shares || '0'));
+            reach = impressions;
+            const likes = parseInt(row.Reactions || row.reactions || row.Likes || row.likes || '0');
+            const comments = parseInt(row.Comments || row.comments || '0');
+            const shares = parseInt(row.Shares || row.shares || row.Reposts || row.reposts || '0');
+            const clicks = parseInt(row.Clicks || row.clicks || row['Link clicks'] || '0');
+            engagement = likes + comments + shares + clicks;
           }
         } else if (report.report_type === 'youtube') {
-          reach = parseInt(row.Views || row.views || '0');
+          reach = parseInt(row.Views || row.views || row['View count'] || '0');
           engagement = (parseInt(row.Likes || row.likes || '0') + 
                       parseInt(row.Comments || row.comments || '0'));
         } else if (report.report_type === 'newsletter') {
-          reach = parseInt(row.Opens || row.opens || '0');
-          engagement = parseInt(row.Clicks || row.clicks || '0');
+          reach = parseInt(row.Opens || row.opens || row['Open count'] || '0');
+          engagement = parseInt(row.Clicks || row.clicks || row['Click count'] || '0');
         }
 
-        if (reach > 0 || engagement > 0) {
+        if (reach > 0 || engagement > 0 || impressions > 0) {
           const engagementRate = reach > 0 ? (engagement / reach * 100) : 0;
           content.push({
             title: title.length > 50 ? title.substring(0, 50) + '...' : title,
             platform: report.report_type,
-            reach,
+            reach: reach || impressions,
             engagement,
             engagementRate: engagementRate.toFixed(2),
             date
@@ -274,7 +305,7 @@ export default function AnalyticsDashboard() {
       setAnalyticsReports(data || []);
       
       // Process data for charts
-      const processed = processCSVDataForCharts(data || []);
+      const processed = processChartData(data || []);
       setChartData(processed);
       
       // Calculate aggregated metrics
