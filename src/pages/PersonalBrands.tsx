@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import ContentCallForm from '@/components/forms/ContentCallForm';
 import YouTubeContentForm from '@/components/forms/YouTubeContentForm';
 import ContentArchetypeForm from '@/components/forms/ContentArchetypeForm';
 import TranscriptContentGenerator from '@/components/forms/TranscriptContentGenerator';
+import ContentGenerationForm from '@/components/forms/ContentGenerationForm';
 import { 
   User, 
   Plus, 
@@ -487,6 +488,7 @@ const mockWorkspaces: Workspace[] = [
 ];
 
 export default function PersonalBrands() {
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace>(mockWorkspaces[0]);
@@ -1118,14 +1120,18 @@ export default function PersonalBrands() {
                                     {source.type}
                                   </Badge>
                                 </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => generateContent(selectedBrand, [source.id])}
-                                >
-                                  <Sparkles className="h-3 w-3 mr-1" />
-                                  Generate
-                                </Button>
+                                  <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => setIsGenerateOpen(true)}
+                                      >
+                                        <Sparkles className="h-3 w-3 mr-1" />
+                                        Generate
+                                      </Button>
+                                    </DialogTrigger>
+                                  </Dialog>
                               </div>
                               <CardTitle className="text-lg">{source.title}</CardTitle>
                               <CardDescription className="text-sm">
@@ -1624,5 +1630,21 @@ function AddSourceForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<Conten
         </Button>
       </div>
     </form>
+  );
+}
+
+      {/* Content Generation Dialog */}
+      <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Generate Content</DialogTitle>
+            <DialogDescription>
+              Create content ideas or platform-specific content using your personal brand
+            </DialogDescription>
+          </DialogHeader>
+          <ContentGenerationForm onClose={() => setIsGenerateOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

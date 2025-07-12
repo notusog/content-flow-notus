@@ -19,7 +19,7 @@ export interface ContentPiece {
   platform: string;
   sourceIds: string[];
   tags: string[];
-  status: 'draft' | 'review' | 'approved' | 'scheduled' | 'published';
+  status: 'idea' | 'draft' | 'review' | 'approved' | 'scheduled' | 'published';
   createdDate: string;
   clientId: string;
 }

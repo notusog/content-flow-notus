@@ -11,7 +11,9 @@ interface ContentContextType {
   addPiece: (piece: Omit<ContentPiece, 'id' | 'createdDate' | 'clientId'>) => Promise<void>;
   updatePiece: (id: string, updates: Partial<ContentPiece>) => Promise<void>;
   deletePiece: (id: string) => Promise<void>;
-  generateContentFromSources: (sourceIds: string[], platform: string, prompt?: string) => Promise<void>;
+  generateContentFromSources: (sourceIds: string[], platform: string, prompt?: string, transcript?: string) => Promise<void>;
+  generateContentIdea: (prompt: string, sourceIds?: string[], transcript?: string) => Promise<void>;
+  promoteToNextStage: (id: string, currentStatus: string) => Promise<void>;
 }
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -245,15 +247,21 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const generateContentFromSources = async (sourceIds: string[], platform: string, prompt?: string) => {
+  const generateContentFromSources = async (sourceIds: string[], platform: string, prompt?: string, transcript?: string) => {
     try {
       const selectedSources = sources.filter(source => sourceIds.includes(source.id));
       
-      // For now, create a simple generated content piece
-      const generatedContent = `AI-generated ${platform} content based on: ${selectedSources.map(s => s.title).join(', ')}`;
+      // Enhanced content generation with transcript support
+      let baseContent = '';
+      if (transcript) {
+        baseContent = `Transcript: ${transcript}\n\n`;
+      }
+      
+      const sourceContent = selectedSources.map(s => `${s.title}: ${s.content}`).join('\n\n');
+      const generatedContent = `${baseContent}AI-generated ${platform} content based on: ${selectedSources.map(s => s.title).join(', ')}\n\nPrompt: ${prompt || 'Generate content'}\n\nSource Material:\n${sourceContent}`;
       
       await addPiece({
-        title: `Generated ${platform} content`,
+        title: `${platform} Draft - ${prompt || 'Generated Content'}`,
         content: generatedContent,
         platform,
         sourceIds,
@@ -270,6 +278,81 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const generateContentIdea = async (prompt: string, sourceIds?: string[], transcript?: string) => {
+    try {
+      const selectedSources = sourceIds ? sources.filter(source => sourceIds.includes(source.id)) : [];
+      
+      let ideaContent = `Content Idea: ${prompt}\n\n`;
+      
+      if (transcript) {
+        ideaContent += `Transcript Reference: ${transcript}\n\n`;
+      }
+      
+      if (selectedSources.length > 0) {
+        ideaContent += `Related Sources: ${selectedSources.map(s => s.title).join(', ')}\n\n`;
+        ideaContent += `Source Insights:\n${selectedSources.map(s => `- ${s.title}: ${s.summary}`).join('\n')}\n\n`;
+      }
+      
+      ideaContent += `Status: Ready for development into content draft`;
+      
+      await addPiece({
+        title: `Idea: ${prompt}`,
+        content: ideaContent,
+        platform: 'general',
+        sourceIds: sourceIds || [],
+        tags: selectedSources.length > 0 ? [...new Set(selectedSources.flatMap(s => s.tags))] : ['idea'],
+        status: 'idea'
+      });
+      
+      toast({
+        title: "Content Idea Created",
+        description: "Your content idea has been saved and can now be developed into a draft"
+      });
+    } catch (error) {
+      console.error('Error creating content idea:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create content idea",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const promoteToNextStage = async (id: string, currentStatus: string) => {
+    try {
+      const statusFlow = {
+        'idea': 'draft',
+        'draft': 'review',
+        'review': 'approved',
+        'approved': 'published'
+      };
+      
+      const nextStatus = statusFlow[currentStatus as keyof typeof statusFlow];
+      if (!nextStatus) {
+        toast({
+          title: "Info",
+          description: "This content is already at the final stage",
+          variant: "default"
+        });
+        return;
+      }
+      
+      await updatePiece(id, { status: nextStatus as ContentPiece['status'] });
+      
+      toast({
+        title: "Status Updated",
+        description: `Content moved from ${currentStatus} to ${nextStatus}`
+      });
+    } catch (error) {
+      console.error('Error promoting content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update content status",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <ContentContext.Provider value={{
       sources,
@@ -279,7 +362,9 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       addPiece,
       updatePiece,
       deletePiece,
-      generateContentFromSources
+      generateContentFromSources,
+      generateContentIdea,
+      promoteToNextStage
     }}>
       {children}
     </ContentContext.Provider>

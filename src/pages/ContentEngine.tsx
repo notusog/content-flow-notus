@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import ContentGenerationForm from '@/components/forms/ContentGenerationForm';
 import { 
   Plus, 
   Search,
@@ -29,7 +30,9 @@ import {
   Edit,
   Trash2,
   Calendar,
-  User
+  User,
+  ChevronRight,
+  ArrowUp
 } from 'lucide-react';
 
 const platformIcons = {
@@ -49,7 +52,7 @@ const sourceTypeIcons = {
 
 export default function ContentEngine() {
   const { user } = useAuth();
-  const { sources, pieces, loading, addSource, addPiece, generateContentFromSources } = useContent();
+  const { sources, pieces, loading, addSource, addPiece, generateContentFromSources, promoteToNextStage } = useContent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
@@ -132,13 +135,8 @@ export default function ContentEngine() {
                     Generate content for any platform using your knowledge sources
                   </DialogDescription>
                 </DialogHeader>
-                <GenerateContentForm 
-                  sources={filteredSources}
-                  onGenerate={(sourceIds, platform, prompt) => {
-                    generateContentFromSources(sourceIds, platform, prompt);
-                    setIsGenerateOpen(false);
-                  }}
-                  onCancel={() => setIsGenerateOpen(false)}
+                <ContentGenerationForm 
+                  onClose={() => setIsGenerateOpen(false)}
                 />
               </DialogContent>
             </Dialog>
@@ -146,12 +144,132 @@ export default function ContentEngine() {
       </div>
 
       {/* Content Tabs */}
-      <Tabs defaultValue="knowledge" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-          <TabsTrigger value="generated">Generated Content</TabsTrigger>
+      <Tabs defaultValue="workflow" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="workflow">Content Workflow</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+          <TabsTrigger value="generated">All Content</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        {/* Content Workflow Tab - MOVED TO FIRST */}
+        <TabsContent value="workflow" className="space-y-4">
+          <div className="text-center mb-6">
+            <Sparkles className="h-12 w-12 mx-auto mb-3 text-primary" />
+            <h3 className="text-xl font-semibold mb-2">Content Production Pipeline</h3>
+            <p className="text-muted-foreground">Track your content from idea to publication</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[
+              { status: 'idea', label: 'Ideas', icon: '💡', color: 'bg-yellow-50 border-yellow-200' },
+              { status: 'draft', label: 'Drafts', icon: '📝', color: 'bg-blue-50 border-blue-200' },
+              { status: 'review', label: 'In Review', icon: '👁️', color: 'bg-orange-50 border-orange-200' },
+              { status: 'approved', label: 'Approved', icon: '✅', color: 'bg-green-50 border-green-200' }
+            ].map(({ status, label, icon, color }) => {
+              const statusPieces = filteredPieces.filter(piece => piece.status === status);
+              return (
+                <Card key={status} className={color}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <span className="text-lg">{icon}</span>
+                        {label}
+                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {statusPieces.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {statusPieces.length === 0 ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p className="text-xs">No {label.toLowerCase()}</p>
+                      </div>
+                    ) : (
+                      statusPieces.map((piece) => (
+                        <div key={piece.id} className="p-3 border rounded-lg bg-white">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="font-medium text-sm truncate pr-2">{piece.title}</div>
+                            {status !== 'approved' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 flex-shrink-0"
+                                onClick={() => promoteToNextStage(piece.id, piece.status)}
+                              >
+                                <ArrowUp className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            {piece.platform !== 'general' && (
+                              <Badge variant="outline" className="mr-1 text-xs">
+                                {piece.platform}
+                              </Badge>
+                            )}
+                            {piece.createdDate}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 w-6 p-0"
+                                onClick={() => {
+                                  setEditingPiece(piece);
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            {status === 'idea' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs px-2"
+                                onClick={() => promoteToNextStage(piece.id, 'idea')}
+                              >
+                                Develop
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Quick Actions */}
+          <Card className="border-dashed border-2 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <Sparkles className="h-8 w-8 mx-auto mb-3 text-primary/60" />
+                <h4 className="font-medium mb-2">Ready to create?</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Start with an idea or jump straight to content creation
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Content
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Knowledge Base Tab */}
         <TabsContent value="knowledge" className="space-y-4">
@@ -238,13 +356,31 @@ export default function ContentEngine() {
           </div>
         </TabsContent>
 
-        {/* Generated Content Tab */}
+        {/* All Content Tab */}
         <TabsContent value="generated" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Generated Content</h3>
-            <Badge variant="outline">
-              {filteredPieces.length} pieces
-            </Badge>
+            <h3 className="text-lg font-semibold">All Content</h3>
+            <div className="flex items-center gap-4">
+              <Select onValueChange={(status) => {
+                // Filter by status
+                console.log('Filter by status:', status);
+              }}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="idea">Ideas</SelectItem>
+                  <SelectItem value="draft">Drafts</SelectItem>
+                  <SelectItem value="review">In Review</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
+              <Badge variant="outline">
+                {filteredPieces.length} pieces
+              </Badge>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -310,33 +446,66 @@ export default function ContentEngine() {
           </div>
         </TabsContent>
 
-        {/* Workflow Tab */}
-        <TabsContent value="workflow" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {['draft', 'review', 'approved', 'published'].map((status) => {
-              const statusPieces = filteredPieces.filter(piece => piece.status === status);
-              return (
-                <Card key={status}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm capitalize flex items-center justify-between">
-                      {status}
-                      <Badge variant="secondary" className="text-xs">
-                        {statusPieces.length}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {statusPieces.map((piece) => (
-                      <div key={piece.id} className="p-2 border rounded-lg text-xs">
-                        <div className="font-medium truncate">{piece.title}</div>
-                        <div className="text-muted-foreground">{piece.platform}</div>
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Content Performance Overview</CardTitle>
+              <CardDescription>Track how your content is performing across different stages and platforms</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {pieces.filter(p => p.status === 'idea').length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Ideas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {pieces.filter(p => p.status === 'draft').length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Drafts</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {pieces.filter(p => p.status === 'review').length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">In Review</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {pieces.filter(p => p.status === 'approved').length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Approved</div>
+                </div>
+              </div>
+              
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium mb-3">Platform Distribution</h4>
+                <div className="space-y-2">
+                  {['linkedin', 'youtube', 'newsletter', 'instagram', 'blog'].map(platform => {
+                    const count = pieces.filter(p => p.platform === platform).length;
+                    const percentage = pieces.length > 0 ? (count / pieces.length) * 100 : 0;
+                    return (
+                      <div key={platform} className="flex items-center justify-between">
+                        <span className="text-sm capitalize">{platform}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-32 bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full" 
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground">{count}</span>
+                        </div>
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
