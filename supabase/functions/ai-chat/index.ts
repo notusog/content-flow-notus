@@ -212,10 +212,19 @@ function buildSystemPrompt(agentConfig: any, knowledgeBase: any[]) {
       if (item.name && item.description) {
         return `Brand: ${item.name} - ${item.description}`;
       }
+      if (item.tone_of_voice) {
+        return `Tone of Voice: ${item.tone_of_voice}`;
+      }
+      if (item.bio) {
+        return `Bio: ${item.bio}`;
+      }
+      if (item.expertise_areas) {
+        return `Expertise: ${item.expertise_areas.join(', ')}`;
+      }
       return JSON.stringify(item);
     }).join('\n\n');
     
-    systemPrompt += '\n\nUse this knowledge base to provide contextual and accurate responses. Reference specific information when relevant.';
+    systemPrompt += '\n\nIMPORTANT: Use this knowledge base to provide contextual and accurate responses. When generating content, especially for LinkedIn posts, follow the tone of voice patterns and personal brand guidelines provided. Reference specific information when relevant and maintain consistency with the established brand voice.';
   }
 
   return systemPrompt;

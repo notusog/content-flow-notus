@@ -22,6 +22,7 @@ import {
   Brain,
   User,
   Bot,
+  Settings,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -73,6 +74,12 @@ const navigationGroups: NavGroup[] = [
         title: 'AI Chat',
         url: '/ai-chat',
         icon: Bot,
+        permissions: ['content:view', 'admin:all']
+      },
+      {
+        title: 'Client Services',
+        url: '/services',
+        icon: Settings,
         permissions: ['content:view', 'admin:all']
       }
     ]

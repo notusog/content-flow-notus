@@ -1437,13 +1437,17 @@ export default function PersonalBrands() {
               />
             </div>
             <div>
-              <Label htmlFor="toneOfVoice">Tone of Voice (comma-separated)</Label>
-              <Input
+              <Label htmlFor="toneOfVoice">Tone of Voice & LinkedIn Posts</Label>
+              <Textarea
                 id="toneOfVoice"
                 value={newBrand.toneOfVoice}
                 onChange={(e) => setNewBrand(prev => ({ ...prev, toneOfVoice: e.target.value }))}
-                placeholder="Professional, Innovative, Educational"
+                placeholder="Describe tone or paste LinkedIn posts to analyze tone..."
+                className="min-h-[100px]"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Paste LinkedIn posts here to automatically analyze tone patterns, or describe the desired tone of voice
+              </p>
             </div>
             <div className="flex space-x-2 pt-4">
               <Button onClick={handleCreateBrand}>
