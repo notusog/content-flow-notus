@@ -345,8 +345,31 @@ function AddSourceForm({ onSubmit, onCancel }: AddSourceFormProps) {
     content: '',
     summary: '',
     tags: '',
-    source: ''
+    source: '',
+    file: null as File | null
   });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, file }));
+      
+      // Auto-fill title from filename if empty
+      if (!formData.title) {
+        setFormData(prev => ({ ...prev, title: file.name.split('.')[0] }));
+      }
+      
+      // Read file content for text files
+      if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          setFormData(prev => ({ ...prev, content }));
+        };
+        reader.readAsText(file);
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,6 +383,21 @@ function AddSourceForm({ onSubmit, onCancel }: AddSourceFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Upload File (Optional)</label>
+        <Input
+          type="file"
+          onChange={handleFileChange}
+          accept=".txt,.md,.pdf,.doc,.docx,.csv"
+          className="file:mr-2 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
+        />
+        {formData.file && (
+          <p className="text-xs text-muted-foreground">
+            Selected: {formData.file.name}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <label className="text-sm font-medium">Title</label>
         <Input
