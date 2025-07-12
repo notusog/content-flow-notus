@@ -46,7 +46,7 @@ const sourceTypeIcons = {
 };
 
 export default function ContentEngine() {
-  const { user, hasPermission } = useAuth();
+  const { user } = useAuth();
   const { sources, pieces, loading, addSource, addPiece, generateContentFromSources } = useContent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -68,8 +68,16 @@ export default function ContentEngine() {
   // Get all unique tags
   const allTags = [...new Set(sources.flatMap(source => source.tags))];
 
-  const canCreateContent = hasPermission('content:create');
-  const canEditContent = hasPermission('content:edit');
+  const canCreateContent = true; // All authenticated users can create content
+  const canEditContent = true;   // All authenticated users can edit content
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -81,8 +89,7 @@ export default function ContentEngine() {
             Transform your knowledge into content across all channels
           </p>
         </div>
-        {canCreateContent && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
             <Dialog open={isAddSourceOpen} onOpenChange={setIsAddSourceOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
@@ -131,8 +138,7 @@ export default function ContentEngine() {
                 />
               </DialogContent>
             </Dialog>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Content Tabs */}

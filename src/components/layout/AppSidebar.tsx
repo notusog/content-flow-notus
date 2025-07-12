@@ -176,7 +176,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { hasPermission, user } = useAuth();
+  const { user } = useAuth();
   const currentPath = location.pathname;
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
     navigationGroups.reduce((acc, group) => ({
@@ -203,8 +203,8 @@ export function AppSidebar() {
       ? "bg-primary/10 text-primary border-r-2 border-primary font-medium" 
       : "hover:bg-muted/60 text-muted-foreground hover:text-foreground";
 
-  const hasGroupPermission = (items: NavItem[]) =>
-    items.some(item => item.permissions.some(permission => hasPermission(permission)));
+  // All authenticated users can see all navigation groups
+  const hasGroupPermission = (items: NavItem[]) => true;
 
   return (
     <Sidebar className={`${collapsed ? "w-14" : "w-64"} border-r border-border/60`}>
@@ -227,11 +227,7 @@ export function AppSidebar() {
         {/* Navigation Groups */}
         <div className="space-y-1">
           {navigationGroups.map((group) => {
-            if (!hasGroupPermission(group.items)) return null;
-            
-            const visibleItems = group.items.filter(item => 
-              item.permissions.some(permission => hasPermission(permission))
-            );
+            const visibleItems = group.items; // Show all items for authenticated users
 
             const isGroupOpen = openGroups[group.title];
             const hasActiveItem = visibleItems.some(item => isActive(item.url));
@@ -294,9 +290,7 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1 px-3">
-                {managementItems
-                  .filter(item => item.permissions.some(permission => hasPermission(permission)))
-                  .map((item) => (
+                {managementItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
                         <NavLink 
@@ -320,22 +314,20 @@ export function AppSidebar() {
           </SidebarGroup>
         </div>
 
-        {/* User Role Badge */}
+        {/* User Info */}
         {!collapsed && user && (
           <div className="px-6 mt-auto pt-4">
             <div className="p-3 rounded-lg bg-muted/40 border">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-xs font-semibold text-primary">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {user.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                     {user.role === 'strategist' ? 'Strategist' : 
-                     user.role === 'leadership' ? 'Architect' :
-                     user.role === 'gtm' ? 'Setter' : 'Visionary'}
+                  <p className="text-xs font-medium truncate">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    User
                   </p>
                 </div>
               </div>

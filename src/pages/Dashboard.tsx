@@ -107,7 +107,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">
-          {getGreeting()}, {user?.name?.split(' ')[0]}
+          {getGreeting()}, {user?.email?.split('@')[0]}
         </h1>
         <p className="text-muted-foreground text-lg">
           {content.subtitle}

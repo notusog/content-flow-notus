@@ -36,7 +36,7 @@ interface CommandItem {
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { hasPermission, user } = useAuth();
+  const { user } = useAuth();
 
   // Global keyboard shortcut
   useEffect(() => {
@@ -157,25 +157,9 @@ export function GlobalSearch() {
     }
   ];
 
-  // Filter items based on permissions
-  const visibleNavItems = navigationItems.filter(item => {
-    if (item.title === 'Pipeline Generator') return hasPermission('leads:view');
-    if (item.title === 'Content Engine' || item.title === 'Insight Extractor') {
-      return hasPermission('content:create') || hasPermission('content:view');
-    }
-    if (item.title === 'Analytics') return hasPermission('reports:view');
-    if (item.title === 'Team') return hasPermission('users:manage');
-    return true;
-  });
-
-  const visibleQuickActions = quickActions.filter(item => {
-    if (item.title.includes('Create') || item.title.includes('Upload')) {
-      return hasPermission('content:create');
-    }
-    if (item.title.includes('Tasks')) return hasPermission('leads:view');
-    if (item.title.includes('Schedule')) return hasPermission('content:schedule') || hasPermission('content:view');
-    return true;
-  });
+  // All authenticated users can see all navigation items
+  const visibleNavItems = navigationItems;
+  const visibleQuickActions = quickActions;
 
   const runCommand = (action: () => void) => {
     setOpen(false);

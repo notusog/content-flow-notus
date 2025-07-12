@@ -16,11 +16,13 @@ import { LogOut, Settings, User, Keyboard, Search } from 'lucide-react';
 import { ROLE_PERMISSIONS } from '@/types/auth';
 
 export function AppHeader() {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   if (!user) return null;
 
-  const roleInfo = ROLE_PERMISSIONS[user.role];
+  const getUserInitials = (email: string) => {
+    return email.split('@')[0].slice(0, 2).toUpperCase();
+  };
 
   return (
     <header className="h-14 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -30,7 +32,7 @@ export function AppHeader() {
           <SidebarTrigger className="smooth-transition" />
           <div className="hidden md:flex items-center space-x-2">
             <Badge variant="outline" className="text-xs font-medium">
-              {roleInfo.name}
+              User
             </Badge>
           </div>
         </div>
@@ -67,9 +69,8 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {getUserInitials(user.email || '')}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -77,12 +78,12 @@ export function AppHeader() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-sm font-medium leading-none">{user.email}</p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
                   <Badge variant="secondary" className="w-fit mt-1 text-xs">
-                    {roleInfo.name}
+                    User
                   </Badge>
                 </div>
               </DropdownMenuLabel>
@@ -98,7 +99,7 @@ export function AppHeader() {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-destructive focus:text-destructive"
-                onClick={logout}
+                onClick={signOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>

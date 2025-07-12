@@ -121,10 +121,8 @@ export default function ContentLibrary() {
   const [sources, setSources] = useState<ContentSource[]>(mockSources);
   const [generatedContent, setGeneratedContent] = useState<ContentPiece[]>(mockGeneratedContent);
 
-  // Filter sources by current user's client
-  const userSources = sources.filter(source => 
-    user?.clientId ? source.clientId === user.clientId : true
-  );
+  // All authenticated users see all sources
+  const userSources = sources;
 
   // Get all unique tags
   const allTags = Array.from(new Set(userSources.flatMap(source => source.tags)));
@@ -152,7 +150,7 @@ export default function ContentLibrary() {
       tags: sourceData.tags || [],
       source: sourceData.source || '',
       dateAdded: new Date().toISOString().split('T')[0],
-      clientId: user?.clientId || 'default',
+      clientId: 'default', // All users can see all content
       insights: [],
       relatedTopics: []
     };
@@ -178,7 +176,7 @@ export default function ContentLibrary() {
       tags: combinedTags,
       status: 'draft',
       createdDate: new Date().toISOString().split('T')[0],
-      clientId: user?.clientId || 'default'
+      clientId: 'default' // All users can see all content
     };
 
     setGeneratedContent(prev => [...prev, newContent]);

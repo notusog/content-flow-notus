@@ -19,7 +19,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +27,7 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await signIn(email, password);
       toast({
         title: "Welcome to notus OS!",
         description: "Successfully logged in to your content management platform."
