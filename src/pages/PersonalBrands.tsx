@@ -224,6 +224,64 @@ const mockContentSources: ContentSource[] = [
 // Enhanced mock data with content integration
 const mockPersonalBrands: PersonalBrand[] = [
   {
+    id: 'marvin-sangines',
+    name: 'Marvin Sangines',
+    role: 'Personal Brand Strategist & Content Expert',
+    company: 'Personal Brand Consultancy',
+    avatar: '/api/placeholder/150/150',
+    bio: 'Helping B2B founders become thought leaders | Personal brand strategist | Content systems expert | Building content frameworks that scale',
+    toneOfVoice: ['Strategic', 'Thought-leadership', 'Practical', 'Insightful', 'Direct'],
+    workspaceId: 'marvin-workspace',
+    clientConnections: [
+      {
+        clientId: 'b2b-clients',
+        clientName: 'B2B Founder Clients',
+        role: 'primary',
+        permissions: ['content:create', 'content:publish', 'analytics:view'],
+        dateConnected: '2024-01-01',
+        status: 'active'
+      }
+    ],
+    permissions: {
+      canCreateContent: true,
+      canPublishContent: true,
+      canAccessAnalytics: true,
+      canManageClients: true,
+      maxClientsAllowed: 15
+    },
+    strategyDocuments: [
+      {
+        id: 'ms-icp-1',
+        type: 'icp',
+        title: 'B2B Founder ICP',
+        content: { 
+          demographics: 'B2B founders, CEOs, startup executives aged 28-50',
+          psychographics: 'Growth-minded, strategic thinkers, visibility-focused',
+          painPoints: 'Limited time for content creation, unclear personal brand strategy',
+          goals: 'Build thought leadership, generate qualified leads, establish market authority'
+        },
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-16'
+      }
+    ],
+    contentLibrary: mockContentSources.filter(s => s.brandId === 'marvin-sangines'),
+    generatedContent: [],
+    approvedContent: [],
+    llmSettings: {
+      primaryModel: 'Claude 3.5 Sonnet',
+      temperature: 0.7,
+      maxTokens: 500,
+      systemPrompt: 'You are Marvin Sangines, a personal brand strategist helping B2B founders build thought leadership. Write with strategic insight about personal branding, content creation, and founder communication. Be practical and direct while sharing valuable frameworks.'
+    },
+    metrics: {
+      postsGenerated: 0,
+      engagementRate: 0,
+      followers: 0,
+      contentScore: 0
+    },
+    lastUpdated: '2024-01-16'
+  },
+  {
     id: 'vicktoria-klich',
     name: 'Vicktoria Klich',
     role: 'Co-founder & Web3 Expert',
@@ -306,6 +364,36 @@ const mockPersonalBrands: PersonalBrand[] = [
 ];
 
 const mockWorkspaces: Workspace[] = [
+  {
+    id: 'marvin-workspace',
+    name: 'Marvin Sangines Consultancy',
+    type: 'personal',
+    members: [
+      { userId: 'marvin-sangines', name: 'Marvin Sangines', email: 'marvin@personalbrand.com', role: 'owner', permissions: ['all'], joinedAt: '2024-01-01' }
+    ],
+    personalBrands: ['marvin-sangines'],
+    clients: [
+      {
+        id: 'b2b-clients',
+        name: 'B2B Founder Clients',
+        industry: 'SaaS/B2B',
+        size: 'small',
+        status: 'active',
+        assignedBrands: ['marvin-sangines'],
+        contractValue: 15000,
+        startDate: '2024-01-01',
+        primaryContact: { name: 'Marvin Sangines', email: 'marvin@personalbrand.com', role: 'Consultant' }
+      }
+    ],
+    description: 'Personal brand consultancy specializing in B2B thought leadership',
+    settings: {
+      defaultBrandPermissions: { canCreateContent: true, canPublishContent: true, canAccessAnalytics: true, canManageClients: true, maxClientsAllowed: 15 },
+      contentApprovalRequired: true,
+      clientAccessLevel: 'full',
+      brandingCustomization: true
+    },
+    billing: { plan: 'pro', monthlyRevenue: 15000, nextBillingDate: '2024-02-01' }
+  },
   {
     id: 'w3-group-workspace',
     name: 'w3.group',
