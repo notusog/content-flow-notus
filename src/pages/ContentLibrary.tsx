@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
+import { usePersonalBrand } from '@/contexts/PersonalBrandContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -43,147 +45,169 @@ import {
   Upload
 } from 'lucide-react';
 
-interface ContentSource {
-  id: string;
-  title: string;
-  type: 'article' | 'video' | 'audio' | 'image' | 'document' | 'url';
-  content: string;
-  summary: string;
-  tags: string[];
-  source: string;
-  dateAdded: string;
-  clientId: string;
-  insights?: string[];
-  relatedTopics?: string[];
-}
+import type { Tables } from '@/integrations/supabase/types';
 
-interface ContentPiece {
-  id: string;
-  title: string;
-  content: string;
-  platform: string;
-  sourceIds: string[];
-  tags: string[];
-  status: 'draft' | 'ready' | 'published';
-  createdDate: string;
-  clientId: string;
-}
+type ContentSource = Tables<'content_sources'>;
+type ContentPiece = Tables<'content_pieces'>;
 
-const mockSources: ContentSource[] = [
-  {
-    id: '1',
-    title: 'B2B Marketing Trends 2024',
-    type: 'article',
-    content: 'Deep dive into emerging B2B marketing trends including AI automation, account-based marketing evolution...',
-    summary: 'Comprehensive analysis of B2B marketing trends for 2024, focusing on AI integration and personalization.',
-    tags: ['b2b-marketing', 'trends', 'ai', 'automation'],
-    source: 'Marketing Land',
-    dateAdded: '2024-01-15',
-    clientId: 'company-1',
-    insights: ['AI adoption accelerating', 'Personalization becoming essential'],
-    relatedTopics: ['Account-based marketing', 'Marketing automation']
-  },
-  {
-    id: '2',
-    title: 'CEO Interview: Future of SaaS',
-    type: 'video',
-    content: 'Interview discussing SaaS industry evolution, customer success strategies, and market predictions...',
-    summary: '30-minute CEO interview covering SaaS growth strategies and industry outlook.',
-    tags: ['saas', 'leadership', 'interview', 'growth'],
-    source: 'Industry Podcast',
-    dateAdded: '2024-01-14',
-    clientId: 'company-1',
-    insights: ['Customer success is paramount', 'Product-led growth gaining traction'],
-    relatedTopics: ['Customer retention', 'Product strategy']
-  }
-];
-
-const mockGeneratedContent: ContentPiece[] = [
-  {
-    id: '1',
-    title: 'The AI Revolution in B2B Marketing',
-    content: 'Based on recent industry analysis, B2B marketers are rapidly adopting AI technologies...',
-    platform: 'LinkedIn',
-    sourceIds: ['1'],
-    tags: ['ai', 'b2b-marketing'],
-    status: 'draft',
-    createdDate: '2024-01-16',
-    clientId: 'company-1'
-  }
-];
+// Using real Supabase data now
 
 export default function ContentLibrary() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { currentPersonalBrand } = usePersonalBrand();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isAddingSource, setIsAddingSource] = useState(false);
-  const [sources, setSources] = useState<ContentSource[]>(mockSources);
-  const [generatedContent, setGeneratedContent] = useState<ContentPiece[]>(mockGeneratedContent);
+  const [sources, setSources] = useState<ContentSource[]>([]);
+  const [generatedContent, setGeneratedContent] = useState<ContentPiece[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // All authenticated users see all sources
+  // Fetch real data from Supabase
+  useEffect(() => {
+    if (currentPersonalBrand) {
+      fetchSources();
+      fetchContentPieces();
+    }
+  }, [currentPersonalBrand]);
+
+  const fetchSources = async () => {
+    if (!user || !currentPersonalBrand) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('content_sources')
+        .select('*')
+        .eq('personal_brand_id', currentPersonalBrand.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSources(data || []);
+    } catch (error) {
+      console.error('Error fetching sources:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load content sources",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchContentPieces = async () => {
+    if (!user || !currentPersonalBrand) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('content_pieces')
+        .select('*')
+        .eq('personal_brand_id', currentPersonalBrand.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setGeneratedContent(data || []);
+    } catch (error) {
+      console.error('Error fetching content pieces:', error);
+    }
+  };
+
+  // Filter sources by personal brand
   const userSources = sources;
 
   // Get all unique tags
-  const allTags = Array.from(new Set(userSources.flatMap(source => source.tags)));
+  const allTags = Array.from(new Set(userSources.flatMap(source => source.tags || [])));
 
   // Filter sources based on search and tags
   const filteredSources = userSources.filter(source => {
     const matchesSearch = searchQuery === '' || 
       source.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       source.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      source.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      (source.tags && source.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     
     const matchesTags = selectedTags.length === 0 || 
-      selectedTags.some(tag => source.tags.includes(tag));
+      (source.tags && selectedTags.some(tag => source.tags.includes(tag)));
     
     return matchesSearch && matchesTags;
   });
 
-  const addSource = (sourceData: Partial<ContentSource>) => {
-    const newSource: ContentSource = {
-      id: Date.now().toString(),
-      title: sourceData.title || '',
-      type: sourceData.type || 'article',
-      content: sourceData.content || '',
-      summary: sourceData.summary || '',
-      tags: sourceData.tags || [],
-      source: sourceData.source || '',
-      dateAdded: new Date().toISOString().split('T')[0],
-      clientId: 'default', // All users can see all content
-      insights: [],
-      relatedTopics: []
-    };
+  const addSource = async (sourceData: Partial<ContentSource>) => {
+    if (!user || !currentPersonalBrand) return;
 
-    setSources(prev => [...prev, newSource]);
-    setIsAddingSource(false);
-    toast({
-      title: "Source Added",
-      description: "New content source has been added to your library",
-    });
+    try {
+      const { data, error } = await supabase
+        .from('content_sources')
+        .insert({
+          title: sourceData.title || '',
+          type: sourceData.type || 'article',
+          content: sourceData.content || '',
+          summary: sourceData.summary || '',
+          tags: sourceData.tags || [],
+          source: sourceData.source || '',
+          user_id: user.id,
+          personal_brand_id: currentPersonalBrand.id,
+          workspace_id: currentPersonalBrand.workspace_id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSources(prev => [data, ...prev]);
+      setIsAddingSource(false);
+      toast({
+        title: "Source Added",
+        description: "New content source has been added to your library",
+      });
+    } catch (error) {
+      console.error('Error adding source:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add content source",
+        variant: "destructive",
+      });
+    }
   };
 
-  const generateContentFromSources = (sourceIds: string[], platform: string) => {
-    const selectedSources = sources.filter(s => sourceIds.includes(s.id));
-    const combinedTags = Array.from(new Set(selectedSources.flatMap(s => s.tags)));
-    
-    const newContent: ContentPiece = {
-      id: Date.now().toString(),
-      title: `Generated Content from ${selectedSources.length} Sources`,
-      content: `AI-generated content based on: ${selectedSources.map(s => s.title).join(', ')}...`,
-      platform,
-      sourceIds,
-      tags: combinedTags,
-      status: 'draft',
-      createdDate: new Date().toISOString().split('T')[0],
-      clientId: 'default' // All users can see all content
-    };
+  const generateContentFromSources = async (sourceIds: string[], platform: string) => {
+    if (!user || !currentPersonalBrand) return;
 
-    setGeneratedContent(prev => [...prev, newContent]);
-    toast({
-      title: "Content Generated",
-      description: `New ${platform} content created from selected sources`,
-    });
+    try {
+      const selectedSources = sources.filter(s => sourceIds.includes(s.id));
+      const combinedTags = Array.from(new Set(selectedSources.flatMap(s => s.tags || [])));
+      
+      const { data, error } = await supabase
+        .from('content_pieces')
+        .insert({
+          title: `Generated Content from ${selectedSources.length} Sources`,
+          content: `AI-generated content based on: ${selectedSources.map(s => s.title).join(', ')}...`,
+          platform,
+          source_ids: sourceIds,
+          tags: combinedTags,
+          status: 'draft',
+          user_id: user.id,
+          personal_brand_id: currentPersonalBrand.id,
+          workspace_id: currentPersonalBrand.workspace_id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setGeneratedContent(prev => [data, ...prev]);
+      toast({
+        title: "Content Generated",
+        description: `New ${platform} content created from selected sources`,
+      });
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate content",
+        variant: "destructive",
+      });
+    }
   };
 
   const typeIcons = {
@@ -195,17 +219,36 @@ export default function ContentLibrary() {
     url: Link
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentPersonalBrand) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">No Personal Brand Selected</h3>
+          <p className="text-muted-foreground">Please select a personal brand from the header to view content.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center space-x-3">
+            <h1 className="text-3xl font-bold tracking-tight flex items-center space-x-3">
             <Brain className="h-8 w-8 text-primary" />
             <span>Content Library</span>
           </h1>
           <p className="text-muted-foreground">
-            Your second brain for content creation and knowledge management
+            Your second brain for {currentPersonalBrand.name} content creation and knowledge management
           </p>
         </div>
         <Dialog open={isAddingSource} onOpenChange={setIsAddingSource}>
@@ -305,7 +348,7 @@ export default function ContentLibrary() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex flex-wrap gap-1">
-                      {source.tags.map((tag, index) => (
+                      {(source.tags || []).map((tag, index) => (
                         <Badge key={index} variant="secondary" className="text-xs">
                           <Tag className="h-2 w-2 mr-1" />
                           {tag}
@@ -325,7 +368,7 @@ export default function ContentLibrary() {
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3 inline mr-1" />
-                        {new Date(source.dateAdded).toLocaleDateString()}
+                        {new Date(source.created_at).toLocaleDateString()}
                       </div>
                       <Button 
                         size="sm" 
@@ -352,7 +395,7 @@ export default function ContentLibrary() {
                     <div>
                       <CardTitle className="text-lg">{content.title}</CardTitle>
                       <CardDescription>
-                        For {content.platform} • Created {new Date(content.createdDate).toLocaleDateString()}
+                        For {content.platform} • Created {new Date(content.created_at).toLocaleDateString()}
                       </CardDescription>
                     </div>
                     <Badge variant={content.status === 'published' ? 'default' : 'secondary'}>
@@ -360,19 +403,19 @@ export default function ContentLibrary() {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">{content.content}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {content.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-xs text-muted-foreground">
-                      Based on {content.sourceIds.length} source(s)
-                    </span>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">{content.content}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(content.tags || []).map((tag, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-xs text-muted-foreground">
+                        Based on {(content.source_ids || []).length} source(s)
+                      </span>
                     <div className="space-x-2">
                       <Button size="sm" variant="outline">
                         <Edit className="h-3 w-3 mr-1" />

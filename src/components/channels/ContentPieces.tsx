@@ -24,8 +24,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useUser } from '@/contexts/UserContext';
+import { usePersonalBrand } from '@/contexts/PersonalBrandContext';
 import type { Tables } from '@/integrations/supabase/types';
 
 type ContentPiece = Tables<'content_pieces'>;
@@ -37,8 +37,8 @@ interface ContentPiecesProps {
 
 export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { currentWorkspace } = useWorkspace();
+  const { user } = useUser();
+  const { currentPersonalBrand } = usePersonalBrand();
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -53,19 +53,20 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
   });
 
   useEffect(() => {
-    fetchContentPieces();
-  }, [platform, user, currentWorkspace]);
+    if (currentPersonalBrand) {
+      fetchContentPieces();
+    }
+  }, [platform, user, currentPersonalBrand]);
 
   const fetchContentPieces = async () => {
-    if (!user || !currentWorkspace) return;
+    if (!user || !currentPersonalBrand) return;
     
     try {
       const { data, error } = await supabase
         .from('content_pieces')
         .select('*')
         .eq('platform', platform.toLowerCase())
-        .eq('user_id', user.id)
-        .eq('workspace_id', currentWorkspace.id)
+        .eq('personal_brand_id', currentPersonalBrand.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -82,7 +83,7 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
   };
 
   const handleCreateContent = async () => {
-    if (!formData.title || !formData.content || !user || !currentWorkspace) {
+    if (!formData.title || !formData.content || !user || !currentPersonalBrand) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -101,7 +102,8 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
           status: formData.status,
           tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
           user_id: user.id,
-          workspace_id: currentWorkspace.id
+          personal_brand_id: currentPersonalBrand.id,
+          workspace_id: currentPersonalBrand.workspace_id
         })
         .select()
         .single();
@@ -152,6 +154,17 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!currentPersonalBrand) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">No Personal Brand Selected</h3>
+          <p className="text-muted-foreground">Please select a personal brand from the header to view content.</p>
+        </div>
       </div>
     );
   }

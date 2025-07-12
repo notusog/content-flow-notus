@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { usePersonalBrand } from '@/contexts/PersonalBrandContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,12 +18,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Settings, User, Keyboard, Search, Briefcase, Plus } from 'lucide-react';
-import { ROLE_PERMISSIONS } from '@/types/auth';
+import { LogOut, Settings, User, Keyboard, Search, Briefcase, Plus, UserIcon } from 'lucide-react';
 
 export function AppHeader() {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useUser();
   const { workspaces, currentWorkspace, setCurrentWorkspace, createWorkspace } = useWorkspace();
+  const { personalBrands, currentPersonalBrand, setCurrentPersonalBrand } = usePersonalBrand();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
@@ -53,79 +54,104 @@ export function AppHeader() {
         <div className="flex items-center space-x-4">
           <SidebarTrigger className="smooth-transition" />
           
-          {/* Workspace/Client Selector */}
-          <div className="flex items-center space-x-2">
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={currentWorkspace?.id || ''} 
-              onValueChange={(value) => {
-                const workspace = workspaces.find(w => w.id === value);
-                setCurrentWorkspace(workspace || null);
-              }}
-            >
-              <SelectTrigger className="w-[200px] h-8">
-                <SelectValue placeholder="Select workspace..." />
-              </SelectTrigger>
-              <SelectContent>
-                {workspaces.map((workspace) => (
-                  <SelectItem key={workspace.id} value={workspace.id}>
-                    {workspace.name}
-                  </SelectItem>
-                ))}
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <SelectItem value="__create__">
-                      <Button 
-                        variant="ghost" 
-                        className="w-full justify-start p-0 h-auto font-normal"
-                        onClick={handleCreateClick}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create New Workspace
-                      </Button>
+          {/* Personal Brand Selector */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <UserIcon className="h-4 w-4 text-muted-foreground" />
+              <Select 
+                value={currentPersonalBrand?.id || ''} 
+                onValueChange={(value) => {
+                  const brand = personalBrands.find(b => b.id === value);
+                  setCurrentPersonalBrand(brand || null);
+                }}
+              >
+                <SelectTrigger className="w-[200px] h-8">
+                  <SelectValue placeholder="Select personal brand..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {personalBrands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.id}>
+                      {brand.name}
                     </SelectItem>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Workspace</DialogTitle>
-                      <DialogDescription>
-                        Create a new workspace for organizing your content and projects.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="workspace-name">Workspace Name</Label>
-                        <Input
-                          id="workspace-name"
-                          value={newWorkspaceName}
-                          onChange={(e) => setNewWorkspaceName(e.target.value)}
-                          placeholder="e.g., Personal Brand, Client Project..."
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleCreateWorkspace();
-                            }
-                          }}
-                        />
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Workspace Selector */}
+            <div className="flex items-center space-x-2">
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              <Select 
+                value={currentWorkspace?.id || ''} 
+                onValueChange={(value) => {
+                  const workspace = workspaces.find(w => w.id === value);
+                  setCurrentWorkspace(workspace || null);
+                }}
+              >
+                <SelectTrigger className="w-[200px] h-8">
+                  <SelectValue placeholder="Select workspace..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((workspace) => (
+                    <SelectItem key={workspace.id} value={workspace.id}>
+                      {workspace.name}
+                    </SelectItem>
+                  ))}
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <SelectItem value="__create__">
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start p-0 h-auto font-normal"
+                          onClick={handleCreateClick}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create New Workspace
+                        </Button>
+                      </SelectItem>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create New Workspace</DialogTitle>
+                        <DialogDescription>
+                          Create a new workspace for organizing your content and projects.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="workspace-name">Workspace Name</Label>
+                          <Input
+                            id="workspace-name"
+                            value={newWorkspaceName}
+                            onChange={(e) => setNewWorkspaceName(e.target.value)}
+                            placeholder="e.g., Personal Brand, Client Project..."
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleCreateWorkspace();
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <DialogFooter>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          setIsCreateDialogOpen(false);
-                          setNewWorkspaceName('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim()}>
-                        Create Workspace
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </SelectContent>
-            </Select>
+                      <DialogFooter>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setIsCreateDialogOpen(false);
+                            setNewWorkspaceName('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim()}>
+                          Create Workspace
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

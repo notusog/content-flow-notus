@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
+import { usePersonalBrand } from '@/contexts/PersonalBrandContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -70,25 +71,28 @@ const mockAnalyticsData: AnalyticsData[] = [
 ];
 
 export default function ClientPortal() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { currentPersonalBrand } = usePersonalBrand();
   const { toast } = useToast();
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('approval');
 
   useEffect(() => {
-    if (user) {
+    if (currentPersonalBrand) {
       fetchContentPieces();
     }
-  }, [user]);
+  }, [user, currentPersonalBrand]);
 
   const fetchContentPieces = async () => {
+    if (!user || !currentPersonalBrand) return;
+
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('content_pieces')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('personal_brand_id', currentPersonalBrand.id)
         .in('status', ['need_review', 'in_review', 'approved', 'scheduled', 'published'])
         .order('created_at', { ascending: false })
         .limit(20);
@@ -198,6 +202,25 @@ export default function ClientPortal() {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentPersonalBrand) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">No Personal Brand Selected</h3>
+          <p className="text-muted-foreground">Please select a personal brand from the header to view content.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -205,7 +228,7 @@ export default function ClientPortal() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Client Portal</h1>
           <p className="text-muted-foreground">
-            Review, approve, and track your content performance
+            Review, approve, and track content for {currentPersonalBrand.name}
           </p>
         </div>
       </div>

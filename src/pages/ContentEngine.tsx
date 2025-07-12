@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
+import { usePersonalBrand } from '@/contexts/PersonalBrandContext';
 import { useContent } from '@/contexts/ContentContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,8 +52,12 @@ const sourceTypeIcons = {
   document: FileIcon
 };
 
+type ContentSource = Tables<'content_sources'>;
+type ContentPiece = Tables<'content_pieces'>;
+
 export default function ContentEngine() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const { currentPersonalBrand } = usePersonalBrand();
   const { sources, pieces, loading, addSource, addPiece, generateContentFromSources, promoteToNextStage } = useContent();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -61,19 +67,23 @@ export default function ContentEngine() {
   const [editingPiece, setEditingPiece] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Filter sources based on search
+  // Filter sources based on search and personal brand
   const filteredSources = sources.filter(source => {
+    if (currentPersonalBrand && source.personal_brand_id !== currentPersonalBrand.id) return false;
     if (searchQuery && !source.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !source.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (selectedTags.length > 0 && !selectedTags.some(tag => source.tags.includes(tag))) return false;
+    if (selectedTags.length > 0 && !selectedTags.some(tag => source.tags?.includes(tag))) return false;
     return true;
   });
 
-  // All pieces are already filtered by RLS
-  const filteredPieces = pieces;
+  // Filter pieces by personal brand  
+  const filteredPieces = pieces.filter(piece => {
+    if (currentPersonalBrand && piece.personal_brand_id !== currentPersonalBrand.id) return false;
+    return true;
+  });
 
   // Get all unique tags
-  const allTags = [...new Set(sources.flatMap(source => source.tags))];
+  const allTags = [...new Set(sources.flatMap(source => source.tags || []))];
 
   const canCreateContent = true; // All authenticated users can create content
   const canEditContent = true;   // All authenticated users can edit content
@@ -82,6 +92,17 @@ export default function ContentEngine() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!currentPersonalBrand) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">No Personal Brand Selected</h3>
+          <p className="text-muted-foreground">Please select a personal brand from the header to view content.</p>
+        </div>
       </div>
     );
   }
@@ -208,7 +229,7 @@ export default function ContentEngine() {
                                 {piece.platform}
                               </Badge>
                             )}
-                            {piece.createdDate}
+                            {new Date(piece.created_at).toLocaleDateString()}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex gap-1">
@@ -312,7 +333,7 @@ export default function ContentEngine() {
                           {source.type}
                         </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">{source.dateAdded}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(source.created_at).toLocaleDateString()}</span>
                     </div>
                     <CardTitle className="text-sm font-medium leading-tight">
                       {source.title}
@@ -324,14 +345,14 @@ export default function ContentEngine() {
                   <CardContent className="pt-0">
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-1">
-                        {source.tags.slice(0, 3).map(tag => (
+                        {(source.tags || []).slice(0, 3).map(tag => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
-                        {source.tags.length > 3 && (
+                        {(source.tags || []).length > 3 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{source.tags.length - 3}
+                            +{(source.tags || []).length - 3}
                           </Badge>
                         )}
                       </div>
@@ -412,14 +433,14 @@ export default function ContentEngine() {
                   <CardContent className="pt-0">
                     <div className="space-y-3">
                       <div className="flex flex-wrap gap-1">
-                        {piece.tags.slice(0, 3).map(tag => (
+                        {(piece.tags || []).slice(0, 3).map(tag => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">{piece.createdDate}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(piece.created_at).toLocaleDateString()}</span>
                         <div className="flex space-x-1">
                           <Button variant="ghost" size="sm">
                             <Eye className="h-3 w-3" />
