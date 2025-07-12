@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
   User, 
@@ -207,6 +208,13 @@ export default function PersonalBrands() {
   const [selectedBrand, setSelectedBrand] = useState<PersonalBrand | null>(mockPersonalBrands[0]);
   const [personalBrands, setPersonalBrands] = useState<PersonalBrand[]>(mockPersonalBrands);
   const [isCreatingBrand, setIsCreatingBrand] = useState(false);
+  const [newBrand, setNewBrand] = useState({
+    name: '',
+    role: '',
+    company: '',
+    bio: '',
+    toneOfVoice: '',
+  });
 
   const workspaceBrands = personalBrands.filter(brand => 
     selectedWorkspace.personalBrands.includes(brand.id)
@@ -216,6 +224,51 @@ export default function PersonalBrands() {
     toast({
       title: "Content Generated",
       description: `Generated new LinkedIn post for ${brand.name} using ${brand.llmSettings.primaryModel}`,
+    });
+  };
+
+  const handleCreateBrand = () => {
+    if (!newBrand.name || !newBrand.role || !newBrand.company) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const brand: PersonalBrand = {
+      id: newBrand.name.toLowerCase().replace(/\s+/g, '-'),
+      name: newBrand.name,
+      role: newBrand.role,
+      company: newBrand.company,
+      avatar: '/api/placeholder/150/150',
+      bio: newBrand.bio,
+      toneOfVoice: newBrand.toneOfVoice.split(',').map(t => t.trim()).filter(t => t),
+      approvedContent: [],
+      llmSettings: {
+        primaryModel: 'Claude 3.5 Sonnet',
+        temperature: 0.7,
+        maxTokens: 500,
+        systemPrompt: `You are ${newBrand.name}, ${newBrand.role} at ${newBrand.company}. Write in an authentic and engaging tone.`,
+      },
+      metrics: {
+        postsGenerated: 0,
+        engagementRate: 0,
+        followers: 0,
+        contentScore: 0,
+      },
+      lastUpdated: new Date().toISOString().split('T')[0],
+    };
+
+    setPersonalBrands([...personalBrands, brand]);
+    setSelectedBrand(brand);
+    setIsCreatingBrand(false);
+    setNewBrand({ name: '', role: '', company: '', bio: '', toneOfVoice: '' });
+    
+    toast({
+      title: "Brand Created",
+      description: `Successfully created brand profile for ${brand.name}`,
     });
   };
 
@@ -538,6 +591,74 @@ export default function PersonalBrands() {
           )}
         </div>
       </div>
+
+      {/* Create Brand Dialog */}
+      <Dialog open={isCreatingBrand} onOpenChange={setIsCreatingBrand}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create New Brand</DialogTitle>
+            <DialogDescription>
+              Set up a new personal brand profile for AI-powered content generation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                placeholder="Enter full name"
+                value={newBrand.name}
+                onChange={(e) => setNewBrand({ ...newBrand, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role/Title *</Label>
+              <Input
+                id="role"
+                placeholder="e.g., Content Strategist, CEO, Marketing Director"
+                value={newBrand.role}
+                onChange={(e) => setNewBrand({ ...newBrand, role: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company">Company *</Label>
+              <Input
+                id="company"
+                placeholder="Company or organization name"
+                value={newBrand.company}
+                onChange={(e) => setNewBrand({ ...newBrand, company: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                placeholder="Brief professional bio..."
+                value={newBrand.bio}
+                onChange={(e) => setNewBrand({ ...newBrand, bio: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="toneOfVoice">Tone of Voice (comma-separated)</Label>
+              <Input
+                id="toneOfVoice"
+                placeholder="e.g., Professional, Innovative, Authentic"
+                value={newBrand.toneOfVoice}
+                onChange={(e) => setNewBrand({ ...newBrand, toneOfVoice: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsCreatingBrand(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateBrand}>
+              Create Brand
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
