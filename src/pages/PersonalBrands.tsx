@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   User, 
   Plus, 
@@ -23,9 +24,27 @@ import {
   TrendingUp,
   FileText,
   Zap,
-  Brain
+  Brain,
+  Search,
+  Tag,
+  Link,
+  Video,
+  Mic,
+  Image,
+  Calendar,
+  Eye,
+  Trash2,
+  Sparkles,
+  Filter,
+  Download,
+  Target,
+  BarChart,
+  BookOpen,
+  Lightbulb,
+  Rocket
 } from 'lucide-react';
 
+// Enhanced interfaces connecting brands to content sources
 interface PersonalBrand {
   id: string;
   name: string;
@@ -48,11 +67,49 @@ interface PersonalBrand {
     contentScore: number;
   };
   lastUpdated: string;
-  // Enhanced connection system
   workspaceId: string;
   clientConnections: ClientConnection[];
   permissions: BrandPermissions;
   strategyDocuments: StrategyDocument[];
+  contentLibrary: ContentSource[];
+  generatedContent: ContentPiece[];
+}
+
+interface ContentSource {
+  id: string;
+  title: string;
+  type: 'article' | 'video' | 'audio' | 'image' | 'document' | 'url';
+  content: string;
+  summary: string;
+  tags: string[];
+  source: string;
+  dateAdded: string;
+  brandId: string;
+  clientId?: string;
+  insights?: string[];
+  relatedTopics?: string[];
+}
+
+interface ContentPiece {
+  id: string;
+  title: string;
+  content: string;
+  platform: string;
+  sourceIds: string[];
+  tags: string[];
+  status: 'draft' | 'ready' | 'published';
+  createdDate: string;
+  brandId: string;
+  clientId?: string;
+}
+
+interface LinkedInPost {
+  id: string;
+  content: string;
+  engagement: number;
+  date: string;
+  tags: string[];
+  approved: boolean;
 }
 
 interface ClientConnection {
@@ -80,15 +137,6 @@ interface StrategyDocument {
   clientId?: string;
   createdAt: string;
   updatedAt: string;
-}
-
-interface LinkedInPost {
-  id: string;
-  content: string;
-  engagement: number;
-  date: string;
-  tags: string[];
-  approved: boolean;
 }
 
 interface Workspace {
@@ -136,88 +184,44 @@ interface WorkspaceSettings {
   brandingCustomization: boolean;
 }
 
-const mockWorkspaces: Workspace[] = [
-  {
-    id: 'notus-company',
-    name: 'Notus Agency',
-    type: 'agency',
-    members: [
-      { userId: 'marvin-sangines', name: 'Marvin Sangines', email: 'marvin@notus.com', role: 'owner', permissions: ['all'], joinedAt: '2024-01-01' },
-      { userId: 'max-radman', name: 'Max Radman', email: 'max@notus.com', role: 'manager', permissions: ['content:create', 'content:edit', 'analytics:view'], joinedAt: '2024-01-02' },
-      { userId: 'tim-chilling', name: 'Tim Chilling', email: 'tim@notus.com', role: 'creator', permissions: ['content:create'], joinedAt: '2024-01-03' }
-    ],
-    personalBrands: ['marvin-sangines', 'max-radman'],
-    clients: [
-      {
-        id: 'techcorp-client',
-        name: 'TechCorp Solutions',
-        industry: 'Technology',
-        size: 'enterprise',
-        status: 'active',
-        assignedBrands: ['marvin-sangines'],
-        contractValue: 15000,
-        startDate: '2024-01-01',
-        primaryContact: { name: 'Sarah Johnson', email: 'sarah@techcorp.com', role: 'Marketing Director' }
-      },
-      {
-        id: 'saas-startup-client',
-        name: 'SaaS Growth Co',
-        industry: 'Software',
-        size: 'startup',
-        status: 'active',
-        assignedBrands: ['max-radman'],
-        contractValue: 8000,
-        startDate: '2024-01-15',
-        primaryContact: { name: 'Mike Chen', email: 'mike@saasgrowth.com', role: 'CEO' }
-      }
-    ],
-    description: 'Professional content marketing agency serving B2B companies',
-    settings: {
-      defaultBrandPermissions: { canCreateContent: true, canPublishContent: false, canAccessAnalytics: true, canManageClients: false, maxClientsAllowed: 5 },
-      contentApprovalRequired: true,
-      clientAccessLevel: 'limited',
-      brandingCustomization: true
-    },
-    billing: { plan: 'pro', monthlyRevenue: 23000, nextBillingDate: '2024-02-01' }
-  },
-  {
-    id: 'w3-group-workspace',
-    name: 'w3.group',
-    type: 'company',
-    members: [
-      { userId: 'vicktoria-klich', name: 'Vicktoria Klich', email: 'vicky@w3.group', role: 'owner', permissions: ['all'], joinedAt: '2024-01-01' }
-    ],
-    personalBrands: ['vicktoria-klich'],
-    clients: [
-      {
-        id: 'web3-clients',
-        name: 'Internal Brand Building',
-        industry: 'Web3',
-        size: 'small',
-        status: 'active',
-        assignedBrands: ['vicktoria-klich'],
-        contractValue: 0,
-        startDate: '2024-01-01',
-        primaryContact: { name: 'Vicktoria Klich', email: 'vicky@w3.group', role: 'Co-founder' }
-      }
-    ],
-    description: 'Web3 innovation company focused on decentralized solutions',
-    settings: {
-      defaultBrandPermissions: { canCreateContent: true, canPublishContent: true, canAccessAnalytics: true, canManageClients: true, maxClientsAllowed: 10 },
-      contentApprovalRequired: false,
-      clientAccessLevel: 'full',
-      brandingCustomization: true
-    },
-    billing: { plan: 'enterprise', monthlyRevenue: 0, nextBillingDate: '2024-02-01' }
-  }
-];
-
 interface BillingInfo {
   plan: 'free' | 'pro' | 'enterprise';
   monthlyRevenue: number;
   nextBillingDate: string;
 }
 
+// Mock content sources for brands
+const mockContentSources: ContentSource[] = [
+  {
+    id: 'cs1',
+    title: 'Web3 Industry Report 2024',
+    type: 'article',
+    content: 'Comprehensive analysis of web3 trends, decentralization patterns, and market adoption rates...',
+    summary: 'Deep dive into web3 ecosystem growth and emerging opportunities in decentralized technologies.',
+    tags: ['web3', 'blockchain', 'decentralization', 'industry-analysis'],
+    source: 'Web3 Research Institute',
+    dateAdded: '2024-01-16',
+    brandId: 'vicktoria-klich',
+    insights: ['DeFi adoption accelerating in Europe', 'Enterprise blockchain integration growing'],
+    relatedTopics: ['DeFi', 'Enterprise blockchain', 'Regulatory frameworks']
+  },
+  {
+    id: 'cs2',
+    title: 'B2B Content Strategy Masterclass',
+    type: 'video',
+    content: 'Expert strategies for building thought leadership through strategic content marketing...',
+    summary: '45-minute masterclass on creating compelling B2B content that drives engagement and leads.',
+    tags: ['b2b-marketing', 'content-strategy', 'thought-leadership', 'lead-generation'],
+    source: 'Marketing Excellence Summit',
+    dateAdded: '2024-01-15',
+    brandId: 'marvin-sangines',
+    clientId: 'techcorp-client',
+    insights: ['Personalization increases conversion by 40%', 'Video content performs 5x better'],
+    relatedTopics: ['Marketing automation', 'Lead nurturing', 'Content personalization']
+  }
+];
+
+// Enhanced mock data with content integration
 const mockPersonalBrands: PersonalBrand[] = [
   {
     id: 'vicktoria-klich',
@@ -250,7 +254,12 @@ const mockPersonalBrands: PersonalBrand[] = [
         id: 'vk-icp-1',
         type: 'icp',
         title: 'Web3 Founder ICP',
-        content: { demographics: 'Tech founders, CTOs, Web3 enthusiasts', psychographics: 'Innovation-driven, early adopters' },
+        content: { 
+          demographics: 'Tech founders, CTOs, Web3 enthusiasts aged 25-45',
+          psychographics: 'Innovation-driven, early adopters, future-focused',
+          painPoints: 'Understanding complex web3 concepts, finding practical applications',
+          goals: 'Build decentralized solutions, stay ahead of tech trends'
+        },
         createdAt: '2024-01-01',
         updatedAt: '2024-01-16'
       },
@@ -258,11 +267,18 @@ const mockPersonalBrands: PersonalBrand[] = [
         id: 'vk-brand-1',
         type: 'brand-guidelines',
         title: 'w3.group Brand Voice',
-        content: { voice: 'Educational yet passionate', tone: 'Accessible expertise', style: 'Future-focused storytelling' },
+        content: { 
+          voice: 'Educational yet passionate',
+          tone: 'Accessible expertise with vision',
+          style: 'Future-focused storytelling',
+          contentPillars: ['Web3 Education', 'Industry Insights', 'Technical Trends', 'Vision & Future']
+        },
         createdAt: '2024-01-01',
         updatedAt: '2024-01-16'
       }
     ],
+    contentLibrary: mockContentSources.filter(s => s.brandId === 'vicktoria-klich'),
+    generatedContent: [],
     approvedContent: [
       {
         id: 'vk1',
@@ -271,21 +287,13 @@ const mockPersonalBrands: PersonalBrand[] = [
         date: '2024-01-16',
         tags: ['web3', 'decentralization', 'innovation', 'future-tech'],
         approved: true
-      },
-      {
-        id: 'vk2',
-        content: 'After 2+ years building in the web3 space, here\'s what I\'ve learned: The technology is complex, but the vision is simple - give people back control of their digital lives. That\'s what drives us every day at w3.group.',
-        engagement: 1650,
-        date: '2024-01-15',
-        tags: ['web3', 'digital-ownership', 'entrepreneurship', 'vision'],
-        approved: true
       }
     ],
     llmSettings: {
       primaryModel: 'Claude 3.5 Sonnet',
       temperature: 0.7,
       maxTokens: 500,
-      systemPrompt: 'You are Vicktoria Klich (vickchick030), co-founder of w3.group and web3 thought leader. Write with passion about web3, decentralization, and digital innovation. Make complex concepts accessible and always connect to real-world impact. Use an innovative yet educational tone.'
+      systemPrompt: 'You are Vicktoria Klich, co-founder of w3.group and web3 thought leader. Write with passion about web3, decentralization, and digital innovation. Make complex concepts accessible and always connect to real-world impact. Use an innovative yet educational tone.'
     },
     metrics: {
       postsGenerated: 28,
@@ -294,172 +302,53 @@ const mockPersonalBrands: PersonalBrand[] = [
       contentScore: 9.2
     },
     lastUpdated: '2024-01-16'
-  },
+  }
+];
+
+const mockWorkspaces: Workspace[] = [
   {
-    id: 'marvin-sangines',
-    name: 'Marvin Sangines',
-    role: 'Content Strategist',
-    company: 'Notus',
-    avatar: '/api/placeholder/150/150',
-    bio: 'Helping B2B companies scale through strategic content and personal branding. 5+ years in growth marketing.',
-    toneOfVoice: ['Strategic', 'Data-driven', 'Authentic', 'Growth-focused', 'Educational'],
-    workspaceId: 'notus-company',
-    clientConnections: [
+    id: 'w3-group-workspace',
+    name: 'w3.group',
+    type: 'company',
+    members: [
+      { userId: 'vicktoria-klich', name: 'Vicktoria Klich', email: 'vicky@w3.group', role: 'owner', permissions: ['all'], joinedAt: '2024-01-01' }
+    ],
+    personalBrands: ['vicktoria-klich'],
+    clients: [
       {
-        clientId: 'techcorp-client',
-        clientName: 'TechCorp Solutions',
-        role: 'primary',
-        permissions: ['content:create', 'content:edit', 'analytics:view'],
-        dateConnected: '2024-01-01',
-        status: 'active'
+        id: 'web3-clients',
+        name: 'Internal Brand Building',
+        industry: 'Web3',
+        size: 'small',
+        status: 'active',
+        assignedBrands: ['vicktoria-klich'],
+        contractValue: 0,
+        startDate: '2024-01-01',
+        primaryContact: { name: 'Vicktoria Klich', email: 'vicky@w3.group', role: 'Co-founder' }
       }
     ],
-    permissions: {
-      canCreateContent: true,
-      canPublishContent: false,
-      canAccessAnalytics: true,
-      canManageClients: false,
-      maxClientsAllowed: 5
+    description: 'Web3 innovation company focused on decentralized solutions',
+    settings: {
+      defaultBrandPermissions: { canCreateContent: true, canPublishContent: true, canAccessAnalytics: true, canManageClients: true, maxClientsAllowed: 10 },
+      contentApprovalRequired: false,
+      clientAccessLevel: 'full',
+      brandingCustomization: true
     },
-    strategyDocuments: [
-      {
-        id: 'ms-icp-techcorp',
-        type: 'icp',
-        title: 'TechCorp B2B SaaS ICP',
-        content: {
-          demographics: 'B2B SaaS founders, Marketing Directors, Growth teams',
-          companySize: '50-500 employees',
-          painPoints: 'Lead generation, content strategy, thought leadership',
-          goals: 'Increase qualified leads, build authority, scale content'
-        },
-        clientId: 'techcorp-client',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-15'
-      },
-      {
-        id: 'ms-archetype-techcorp',
-        type: 'content-archetype',
-        title: 'TechCorp Content Strategy',
-        content: {
-          contentPillars: ['Thought Leadership', 'Industry Insights', 'Case Studies', 'Educational Content'],
-          formats: ['LinkedIn posts', 'Video content', 'Whitepapers', 'Webinars'],
-          frequency: '5 posts/week LinkedIn, 1 video/week, 1 whitepaper/month'
-        },
-        clientId: 'techcorp-client',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-15'
-      }
-    ],
-    approvedContent: [
-      {
-        id: '1',
-        content: 'Just analyzed 500+ B2B LinkedIn posts. Here\'s what the top performers have in common: 1) Lead with a hook 2) Share specific data 3) Tell a story 4) End with actionable advice. The difference? Top posts get 5x more engagement.',
-        engagement: 1250,
-        date: '2024-01-15',
-        tags: ['b2b-marketing', 'linkedin-strategy', 'content-tips'],
-        approved: true
-      },
-      {
-        id: '2',
-        content: 'Content strategy isn\'t about posting more. It\'s about posting smarter. I\'ve seen companies double their leads by cutting their posting frequency in half and focusing on quality. Less noise, more signal.',
-        engagement: 890,
-        date: '2024-01-14',
-        tags: ['content-strategy', 'marketing-tips', 'quality-over-quantity'],
-        approved: true
-      }
-    ],
-    llmSettings: {
-      primaryModel: 'Claude 3.5 Sonnet',
-      temperature: 0.7,
-      maxTokens: 500,
-      systemPrompt: 'You are Marvin Sangines, a strategic content marketer. Write in a data-driven, authentic tone with actionable insights. Always include specific examples or metrics when possible.'
-    },
-    metrics: {
-      postsGenerated: 45,
-      engagementRate: 4.2,
-      followers: 8500,
-      contentScore: 8.7
-    },
-    lastUpdated: '2024-01-15'
-  },
-  {
-    id: 'max-radman',
-    name: 'Max Radman',
-    role: 'Content Strategist',
-    company: 'Notus',
-    avatar: '/api/placeholder/150/150',
-    bio: 'Creative content strategist focused on authentic brand storytelling and social media growth.',
-    toneOfVoice: ['Creative', 'Authentic', 'Energetic', 'Story-driven', 'Relatable'],
-    workspaceId: 'notus-company',
-    clientConnections: [
-      {
-        clientId: 'saas-startup-client',
-        clientName: 'SaaS Growth Co',
-        role: 'primary',
-        permissions: ['content:create', 'content:edit', 'analytics:view'],
-        dateConnected: '2024-01-15',
-        status: 'active'
-      }
-    ],
-    permissions: {
-      canCreateContent: true,
-      canPublishContent: false,
-      canAccessAnalytics: true,
-      canManageClients: false,
-      maxClientsAllowed: 3
-    },
-    strategyDocuments: [
-      {
-        id: 'mr-brand-saas',
-        type: 'brand-guidelines',
-        title: 'SaaS Growth Co Brand Voice',
-        content: {
-          voice: 'Authentic and energetic',
-          tone: 'Relatable storytelling',
-          style: 'Conversational with creative flair',
-          doNots: 'Corporate jargon, overly formal language'
-        },
-        clientId: 'saas-startup-client',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15'
-      }
-    ],
-    approvedContent: [
-      {
-        id: '3',
-        content: 'Stop trying to sound like everyone else. Your brand\'s unique voice is your competitive advantage. I\'ve helped 20+ brands find their authentic voice, and the results speak for themselves: 3x higher engagement, better brand recall, and stronger customer relationships.',
-        engagement: 750,
-        date: '2024-01-13',
-        tags: ['brand-voice', 'authenticity', 'content-creation'],
-        approved: true
-      }
-    ],
-    llmSettings: {
-      primaryModel: 'GPT-4',
-      temperature: 0.8,
-      maxTokens: 400,
-      systemPrompt: 'You are Max Radman, a creative content strategist. Write with energy and authenticity, focusing on storytelling and brand voice. Use relatable examples and conversational tone.'
-    },
-    metrics: {
-      postsGenerated: 32,
-      engagementRate: 3.8,
-      followers: 6200,
-      contentScore: 8.1
-    },
-    lastUpdated: '2024-01-14'
+    billing: { plan: 'enterprise', monthlyRevenue: 0, nextBillingDate: '2024-02-01' }
   }
 ];
 
 export default function PersonalBrands() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace>(mockWorkspaces[0]);
   const [selectedBrand, setSelectedBrand] = useState<PersonalBrand | null>(mockPersonalBrands[0]);
   const [personalBrands, setPersonalBrands] = useState<PersonalBrand[]>(mockPersonalBrands);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(mockWorkspaces);
   const [isCreatingBrand, setIsCreatingBrand] = useState(false);
-  const [isCreatingClient, setIsCreatingClient] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<WorkspaceClient | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [isAddingSource, setIsAddingSource] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newBrand, setNewBrand] = useState({
     name: '',
     role: '',
@@ -467,24 +356,118 @@ export default function PersonalBrands() {
     bio: '',
     toneOfVoice: '',
   });
-  const [newClient, setNewClient] = useState({
-    name: '',
-    industry: '',
-    size: 'small' as 'startup' | 'small' | 'medium' | 'enterprise',
-    contactName: '',
-    contactEmail: '',
-    contactRole: '',
-    contractValue: 0,
-  });
 
   const workspaceBrands = personalBrands.filter(brand => 
     selectedWorkspace.personalBrands.includes(brand.id)
   );
 
-  const generateContent = (brand: PersonalBrand) => {
+  // Content generation with strategic context
+  const generateContent = (brand: PersonalBrand, sourceIds?: string[]) => {
+    const clientContext = brand.clientConnections.find(c => c.status === 'active');
+    const strategyDoc = brand.strategyDocuments.find(d => d.type === 'content-archetype');
+    const selectedSources = sourceIds ? brand.contentLibrary.filter(s => sourceIds.includes(s.id)) : [];
+    
+    const newContent: ContentPiece = {
+      id: `content-${Date.now()}`,
+      title: `AI-Generated Post - ${brand.name}`,
+      content: generateSmartContent(brand, clientContext, strategyDoc, selectedSources),
+      platform: 'LinkedIn',
+      sourceIds: sourceIds || [],
+      tags: extractTagsFromBrand(brand, selectedSources),
+      status: 'draft',
+      createdDate: new Date().toISOString().split('T')[0],
+      brandId: brand.id,
+      clientId: clientContext?.clientId
+    };
+
+    // Update brand with new generated content
+    const updatedBrand = {
+      ...brand,
+      generatedContent: [...brand.generatedContent, newContent],
+      metrics: {
+        ...brand.metrics,
+        postsGenerated: brand.metrics.postsGenerated + 1
+      }
+    };
+
+    setPersonalBrands(prev => prev.map(b => b.id === brand.id ? updatedBrand : b));
+    
     toast({
       title: "Content Generated",
-      description: `Generated new LinkedIn post for ${brand.name} using ${brand.llmSettings.primaryModel}`,
+      description: `Generated new ${newContent.platform} post using ${brand.llmSettings.primaryModel}`,
+    });
+  };
+
+  const generateSmartContent = (brand: PersonalBrand, client?: ClientConnection, strategy?: StrategyDocument, sources?: ContentSource[]) => {
+    const toneWords = brand.toneOfVoice.join(', ').toLowerCase();
+    const clientContext = client ? `for ${client.clientName}` : 'for personal brand';
+    const sourceContext = sources && sources.length > 0 ? 
+      `Based on recent insights from ${sources.map(s => s.title).join(', ')}: ` : '';
+    
+    // AI-simulated content generation with strategy integration
+    const contentTemplates = {
+      'web3': [
+        `${sourceContext}Web3 isn't just technology - it's a paradigm shift in how we think about digital ownership. Here's what I'm seeing in the industry right now...`,
+        `${sourceContext}After years building in web3, one thing is clear: the future belongs to those who understand both the tech AND the human element. ${clientContext}...`,
+        `${sourceContext}The biggest misconception about web3? That it's only about crypto. Actually, it's about giving people control of their digital lives...`
+      ],
+      'b2b': [
+        `${sourceContext}Just analyzed the latest B2B trends ${clientContext}. Here's what the top performers do differently...`,
+        `${sourceContext}Content strategy mistake I see everywhere: focusing on quantity over quality. Here's how to fix it...`,
+        `${sourceContext}The best B2B content doesn't sell - it solves problems. Here's a framework that actually works...`
+      ],
+      'leadership': [
+        `${sourceContext}Leadership isn't about having all the answers - it's about asking the right questions...`,
+        `${sourceContext}Building teams taught me this: culture beats strategy every time. Here's why...`,
+        `${sourceContext}The hardest part of leadership? Knowing when to pivot. Here's how I learned to recognize the signs...`
+      ]
+    };
+
+    const brandType = brand.bio.toLowerCase().includes('web3') ? 'web3' : 
+                     brand.bio.toLowerCase().includes('b2b') ? 'b2b' : 'leadership';
+    
+    const templates = contentTemplates[brandType] || contentTemplates['leadership'];
+    return templates[Math.floor(Math.random() * templates.length)];
+  };
+
+  const extractTagsFromBrand = (brand: PersonalBrand, sources?: ContentSource[]) => {
+    const baseTags = brand.toneOfVoice.map(t => t.toLowerCase().replace(/\s+/g, '-'));
+    const sourceTags = sources ? sources.flatMap(s => s.tags).slice(0, 3) : [];
+    const industryTags = brand.company.toLowerCase().includes('web3') ? ['web3', 'blockchain'] :
+                        brand.company.toLowerCase().includes('saas') ? ['saas', 'software'] :
+                        ['business', 'leadership'];
+    return [...new Set([...baseTags, ...sourceTags, ...industryTags])].slice(0, 5);
+  };
+
+  const addContentSource = (sourceData: Partial<ContentSource>) => {
+    if (!selectedBrand) return;
+
+    const newSource: ContentSource = {
+      id: `source-${Date.now()}`,
+      title: sourceData.title || '',
+      type: sourceData.type || 'article',
+      content: sourceData.content || '',
+      summary: sourceData.summary || '',
+      tags: sourceData.tags || [],
+      source: sourceData.source || '',
+      dateAdded: new Date().toISOString().split('T')[0],
+      brandId: selectedBrand.id,
+      clientId: sourceData.clientId,
+      insights: [],
+      relatedTopics: []
+    };
+
+    const updatedBrand = {
+      ...selectedBrand,
+      contentLibrary: [...selectedBrand.contentLibrary, newSource]
+    };
+
+    setPersonalBrands(prev => prev.map(b => b.id === selectedBrand.id ? updatedBrand : b));
+    setIsAddingSource(false);
+    
+    toast({
+      title: "Source Added",
+      description: "New content source added to brand library",
     });
   };
 
@@ -505,30 +488,30 @@ export default function PersonalBrands() {
       company: newBrand.company,
       avatar: '/api/placeholder/150/150',
       bio: newBrand.bio,
-      toneOfVoice: newBrand.toneOfVoice.split(',').map(t => t.trim()).filter(t => t),
+      toneOfVoice: newBrand.toneOfVoice.split(',').map(t => t.trim()),
       workspaceId: selectedWorkspace.id,
       clientConnections: [],
       permissions: selectedWorkspace.settings.defaultBrandPermissions,
       strategyDocuments: [],
+      contentLibrary: [],
+      generatedContent: [],
       approvedContent: [],
       llmSettings: {
         primaryModel: 'Claude 3.5 Sonnet',
         temperature: 0.7,
         maxTokens: 500,
-        systemPrompt: `You are ${newBrand.name}, ${newBrand.role} at ${newBrand.company}. Write in an authentic and engaging tone.`,
+        systemPrompt: `You are ${newBrand.name}, ${newBrand.role} at ${newBrand.company}.`
       },
       metrics: {
         postsGenerated: 0,
         engagementRate: 0,
         followers: 0,
-        contentScore: 0,
+        contentScore: 0
       },
-      lastUpdated: new Date().toISOString().split('T')[0],
+      lastUpdated: new Date().toISOString().split('T')[0]
     };
 
     setPersonalBrands([...personalBrands, brand]);
-    
-    // Update workspace to include new brand
     setWorkspaces(prev => prev.map(w => 
       w.id === selectedWorkspace.id 
         ? { ...w, personalBrands: [...w.personalBrands, brand.id] }
@@ -545,84 +528,28 @@ export default function PersonalBrands() {
     });
   };
 
-  const handleCreateClient = () => {
-    if (!newClient.name || !newClient.industry || !newClient.contactName || !newClient.contactEmail) {
-      toast({
-        title: "Error", 
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const client: WorkspaceClient = {
-      id: newClient.name.toLowerCase().replace(/\s+/g, '-'),
-      name: newClient.name,
-      industry: newClient.industry,
-      size: newClient.size,
-      status: 'onboarding',
-      assignedBrands: [],
-      contractValue: newClient.contractValue,
-      startDate: new Date().toISOString().split('T')[0],
-      primaryContact: {
-        name: newClient.contactName,
-        email: newClient.contactEmail,
-        role: newClient.contactRole,
-      }
-    };
-
-    setWorkspaces(prev => prev.map(w => 
-      w.id === selectedWorkspace.id 
-        ? { ...w, clients: [...w.clients, client] }
-        : w
-    ));
-
-    setIsCreatingClient(false);
-    setNewClient({ name: '', industry: '', size: 'small', contactName: '', contactEmail: '', contactRole: '', contractValue: 0 });
+  // Filter content sources
+  const filteredSources = selectedBrand?.contentLibrary.filter(source => {
+    const matchesSearch = searchQuery === '' || 
+      source.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      source.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      source.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    toast({
-      title: "Client Added",
-      description: `Successfully added ${client.name} to workspace`,
-    });
-  };
+    const matchesTags = selectedTags.length === 0 || 
+      selectedTags.some(tag => source.tags.includes(tag));
+    
+    return matchesSearch && matchesTags;
+  }) || [];
 
-  const assignBrandToClient = (brandId: string, clientId: string) => {
-    setWorkspaces(prev => prev.map(w => 
-      w.id === selectedWorkspace.id 
-        ? {
-            ...w, 
-            clients: w.clients.map(c => 
-              c.id === clientId 
-                ? { ...c, assignedBrands: [...c.assignedBrands, brandId] }
-                : c
-            )
-          }
-        : w
-    ));
+  const allTags = selectedBrand ? Array.from(new Set(selectedBrand.contentLibrary.flatMap(s => s.tags))) : [];
 
-    setPersonalBrands(prev => prev.map(b => 
-      b.id === brandId 
-        ? {
-            ...b,
-            clientConnections: [
-              ...b.clientConnections,
-              {
-                clientId,
-                clientName: selectedWorkspace.clients.find(c => c.id === clientId)?.name || '',
-                role: 'primary',
-                permissions: ['content:create', 'content:edit', 'analytics:view'],
-                dateConnected: new Date().toISOString().split('T')[0],
-                status: 'active'
-              }
-            ]
-          }
-        : b
-    ));
-
-    toast({
-      title: "Brand Assigned",
-      description: "Brand successfully assigned to client",
-    });
+  const typeIcons = {
+    article: FileText,
+    video: Video,
+    audio: Mic,
+    image: Image,
+    document: FileText,
+    url: Link
   };
 
   return (
@@ -631,86 +558,36 @@ export default function PersonalBrands() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center space-x-3">
-            <User className="h-8 w-8 text-primary" />
-            <span>Personal Brands</span>
+            <Brain className="h-8 w-8 text-primary" />
+            <span>Personal Brand Studio</span>
           </h1>
           <p className="text-muted-foreground">
-            Manage personal brand profiles and AI-powered content generation
+            AI-powered brand management with integrated content strategy
           </p>
         </div>
-        <Button onClick={() => {
-          console.log('Create Brand button clicked');
-          setIsCreatingBrand(true);
-        }}>
+        <Button onClick={() => setIsCreatingBrand(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Create Brand
         </Button>
       </div>
 
       {/* Workspace Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <Card className="lg:col-span-3">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Building className="h-5 w-5 text-muted-foreground" />
-                <Select 
-                  value={selectedWorkspace.id} 
-                  onValueChange={(value) => {
-                    const workspace = workspaces.find(w => w.id === value);
-                    if (workspace) setSelectedWorkspace(workspace);
-                  }}
-                >
-                  <SelectTrigger className="w-[300px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workspaces.map((workspace) => (
-                      <SelectItem key={workspace.id} value={workspace.id}>
-                        <div className="flex items-center space-x-2">
-                          {workspace.type === 'company' ? (
-                            <Building className="h-4 w-4" />
-                          ) : (
-                            <User className="h-4 w-4" />
-                          )}
-                          <span>{workspace.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {workspace.personalBrands.length} brands
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div>
-                  <p className="text-sm font-medium">{selectedWorkspace.description}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedWorkspace.clients.length} clients • {selectedWorkspace.members.length} members
-                  </p>
-                </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Building className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">{selectedWorkspace.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedWorkspace.personalBrands.length} brands • {selectedWorkspace.clients.length} clients
+                </p>
               </div>
-              <Button onClick={() => setIsCreatingClient(true)} variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Client
-              </Button>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-primary">
-                ${selectedWorkspace.billing.monthlyRevenue.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Monthly Revenue</p>
-              <Badge variant="outline" className="mt-2">
-                {selectedWorkspace.billing.plan}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Badge variant="outline">{selectedWorkspace.billing.plan}</Badge>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Brand List */}
@@ -726,8 +603,10 @@ export default function PersonalBrands() {
               {workspaceBrands.map((brand) => (
                 <div
                   key={brand.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedBrand?.id === brand.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedBrand?.id === brand.id 
+                      ? 'border-primary bg-primary/5' 
+                      : 'hover:border-muted-foreground/20'
                   }`}
                   onClick={() => setSelectedBrand(brand)}
                 >
@@ -738,10 +617,19 @@ export default function PersonalBrands() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{brand.name}</p>
-                      <p className="text-xs text-muted-foreground">{brand.role}</p>
-                      <div className="flex items-center space-x-1 mt-1">
-                        <Star className="h-3 w-3 text-yellow-500" />
-                        <span className="text-xs">{brand.metrics.contentScore}</span>
+                      <p className="text-xs text-muted-foreground truncate">{brand.role}</p>
+                      <div className="flex items-center mt-1">
+                        <span className="text-xs text-primary font-medium">
+                          {brand.metrics.contentScore}/10
+                        </span>
+                        <div className="flex ml-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`h-3 w-3 ${i < Math.floor(brand.metrics.contentScore/2) ? 'text-yellow-400 fill-current' : 'text-muted-foreground'}`} 
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -751,33 +639,37 @@ export default function PersonalBrands() {
           </Card>
         </div>
 
-        {/* Brand Details */}
+        {/* Main Content Area */}
         <div className="lg:col-span-3">
           {selectedBrand && (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="content">Approved Content</TabsTrigger>
-                <TabsTrigger value="llm-settings">LLM Settings</TabsTrigger>
+                <TabsTrigger value="content-engine">Content Engine</TabsTrigger>
+                <TabsTrigger value="strategy">Strategy</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
+              {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage src={selectedBrand.avatar} alt={selectedBrand.name} />
-                        <AvatarFallback>{selectedBrand.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl">{selectedBrand.name}</CardTitle>
-                        <CardDescription>{selectedBrand.role} at {selectedBrand.company}</CardDescription>
-                        <p className="text-sm text-muted-foreground mt-2">{selectedBrand.bio}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src={selectedBrand.avatar} alt={selectedBrand.name} />
+                          <AvatarFallback>{selectedBrand.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-xl">{selectedBrand.name}</CardTitle>
+                          <CardDescription className="text-base">{selectedBrand.role} at {selectedBrand.company}</CardDescription>
+                          <p className="text-sm text-muted-foreground mt-2">{selectedBrand.bio}</p>
+                        </div>
                       </div>
-                      <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Profile
+                      <Button onClick={() => generateContent(selectedBrand)}>
+                        <Zap className="mr-2 h-4 w-4" />
+                        Generate Content
                       </Button>
                     </div>
                   </CardHeader>
@@ -786,9 +678,7 @@ export default function PersonalBrands() {
                       <h4 className="font-medium mb-2">Tone of Voice</h4>
                       <div className="flex flex-wrap gap-2">
                         {selectedBrand.toneOfVoice.map((tone, index) => (
-                          <Badge key={index} variant="secondary">
-                            {tone}
-                          </Badge>
+                          <Badge key={index} variant="secondary">{tone}</Badge>
                         ))}
                       </div>
                     </div>
@@ -815,43 +705,202 @@ export default function PersonalBrands() {
                         <p className="text-xs text-muted-foreground">Content Score</p>
                       </div>
                     </div>
-
-                    <Button onClick={() => generateContent(selectedBrand)} className="w-full">
-                      <Zap className="mr-2 h-4 w-4" />
-                      Generate Content
-                    </Button>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="content" className="space-y-4">
+              {/* Content Engine Tab */}
+              <TabsContent value="content-engine" className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Approved LinkedIn Posts</h3>
-                  <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Posts
+                  <div>
+                    <h3 className="text-lg font-medium">Content Engine</h3>
+                    <p className="text-sm text-muted-foreground">
+                      AI-powered content generation using your knowledge base and strategy
+                    </p>
+                  </div>
+                  <Button onClick={() => setIsAddingSource(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Source
                   </Button>
                 </div>
-                
-                <div className="space-y-4">
-                  {selectedBrand.approvedContent.map((post) => (
-                    <Card key={post.id}>
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <p className="text-sm">{post.content}</p>
-                          <div className="flex items-center justify-between">
+
+                {/* Search and Filters */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                          <Input
+                            placeholder="Search knowledge base..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Filter className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex flex-wrap gap-1">
+                          {allTags.slice(0, 4).map(tag => (
+                            <Badge
+                              key={tag}
+                              variant={selectedTags.includes(tag) ? "default" : "outline"}
+                              className="cursor-pointer text-xs"
+                              onClick={() => {
+                                setSelectedTags(prev =>
+                                  prev.includes(tag)
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Tabs defaultValue="sources" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="sources">Knowledge Base ({filteredSources.length})</TabsTrigger>
+                    <TabsTrigger value="generated">Generated Content ({selectedBrand.generatedContent.length})</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="sources" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredSources.map((source) => {
+                        const TypeIcon = typeIcons[source.type];
+                        return (
+                          <Card key={source.id} className="hover:shadow-md transition-shadow">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <TypeIcon className="h-4 w-4 text-muted-foreground" />
+                                  <Badge variant="outline" className="capitalize text-xs">
+                                    {source.type}
+                                  </Badge>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => generateContent(selectedBrand, [source.id])}
+                                >
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  Generate
+                                </Button>
+                              </div>
+                              <CardTitle className="text-lg">{source.title}</CardTitle>
+                              <CardDescription className="text-sm">
+                                {source.summary}
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div className="flex flex-wrap gap-1">
+                                {source.tags.map((tag, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    <Tag className="h-2 w-2 mr-1" />
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                              
+                              {source.insights && source.insights.length > 0 && (
+                                <div className="space-y-1">
+                                  <Label className="text-xs font-medium text-muted-foreground">Key Insights:</Label>
+                                  {source.insights.slice(0, 2).map((insight, index) => (
+                                    <p key={index} className="text-xs text-muted-foreground">• {insight}</p>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between pt-2 border-t">
+                                <div className="text-xs text-muted-foreground">
+                                  <Calendar className="h-3 w-3 inline mr-1" />
+                                  {new Date(source.dateAdded).toLocaleDateString()}
+                                </div>
+                                <span className="text-xs text-muted-foreground">{source.source}</span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="generated" className="space-y-4">
+                    <div className="space-y-4">
+                      {selectedBrand.generatedContent.map((content) => (
+                        <Card key={content.id}>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <CardTitle className="text-lg">{content.title}</CardTitle>
+                                <CardDescription>
+                                  For {content.platform} • Created {new Date(content.createdDate).toLocaleDateString()}
+                                </CardDescription>
+                              </div>
+                              <Badge variant={content.status === 'published' ? 'default' : 'secondary'}>
+                                {content.status}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <p className="text-sm">{content.content}</p>
                             <div className="flex flex-wrap gap-1">
-                              {post.tags.map((tag, index) => (
+                              {content.tags.map((tag, index) => (
                                 <Badge key={index} variant="outline" className="text-xs">
                                   {tag}
                                 </Badge>
                               ))}
                             </div>
-                            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                              <span>{post.engagement} engagements</span>
-                              <span>{new Date(post.date).toLocaleDateString()}</span>
+                            <div className="flex items-center justify-between pt-2 border-t">
+                              <span className="text-xs text-muted-foreground">
+                                Based on {content.sourceIds.length} source(s)
+                              </span>
+                              <div className="space-x-2">
+                                <Button size="sm" variant="outline">
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button size="sm">
+                                  <Rocket className="h-3 w-3 mr-1" />
+                                  Approve & Publish
+                                </Button>
+                              </div>
                             </div>
-                          </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              {/* Strategy Tab */}
+              <TabsContent value="strategy" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedBrand.strategyDocuments.map((doc) => (
+                    <Card key={doc.id}>
+                      <CardHeader>
+                        <div className="flex items-center space-x-2">
+                          {doc.type === 'icp' && <Target className="h-5 w-5 text-blue-500" />}
+                          {doc.type === 'brand-guidelines' && <BookOpen className="h-5 w-5 text-green-500" />}
+                          {doc.type === 'content-archetype' && <Lightbulb className="h-5 w-5 text-yellow-500" />}
+                          <CardTitle className="text-lg">{doc.title}</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {Object.entries(doc.content).map(([key, value]) => (
+                            <div key={key}>
+                              <Label className="text-xs font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</Label>
+                              <p className="text-sm text-muted-foreground">{String(value)}</p>
+                            </div>
+                          ))}
                         </div>
                       </CardContent>
                     </Card>
@@ -859,7 +908,75 @@ export default function PersonalBrands() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="llm-settings" className="space-y-4">
+              {/* Analytics Tab */}
+              <TabsContent value="analytics" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Performance Metrics</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm">Content Score</span>
+                          <span className="font-medium">{selectedBrand.metrics.contentScore}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Engagement Rate</span>
+                          <span className="font-medium">{selectedBrand.metrics.engagementRate}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm">Posts Generated</span>
+                          <span className="font-medium">{selectedBrand.metrics.postsGenerated}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Content Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span>Knowledge Base:</span>
+                          <span className="float-right font-medium">{selectedBrand.contentLibrary.length} sources</span>
+                        </div>
+                        <div className="text-sm">
+                          <span>Generated:</span>
+                          <span className="float-right font-medium">{selectedBrand.generatedContent.length} posts</span>
+                        </div>
+                        <div className="text-sm">
+                          <span>Approved:</span>
+                          <span className="float-right font-medium">{selectedBrand.approvedContent.length} posts</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Client Connections</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {selectedBrand.clientConnections.map((client, index) => (
+                          <div key={index} className="text-sm">
+                            <span>{client.clientName}</span>
+                            <Badge variant="outline" className="float-right text-xs">
+                              {client.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Settings Tab */}
+              <TabsContent value="settings" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>LLM Configuration</CardTitle>
@@ -922,54 +1039,6 @@ export default function PersonalBrands() {
                   </CardContent>
                 </Card>
               </TabsContent>
-
-              <TabsContent value="analytics" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Content Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Avg. Engagement Rate</span>
-                          <span className="font-medium">{selectedBrand.metrics.engagementRate}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Posts This Month</span>
-                          <span className="font-medium">12</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Best Performing Tag</span>
-                          <span className="font-medium">b2b-marketing</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>AI Model Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-sm">Content Quality Score</span>
-                          <span className="font-medium">{selectedBrand.metrics.contentScore}/10</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Model Accuracy</span>
-                          <span className="font-medium">94%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm">Tone Consistency</span>
-                          <span className="font-medium">91%</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
             </Tabs>
           )}
         </div>
@@ -977,340 +1046,188 @@ export default function PersonalBrands() {
 
       {/* Create Brand Dialog */}
       <Dialog open={isCreatingBrand} onOpenChange={setIsCreatingBrand}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create New Brand</DialogTitle>
+            <DialogTitle>Create Personal Brand</DialogTitle>
             <DialogDescription>
-              Set up a new personal brand profile for AI-powered content generation.
+              Set up a new AI-powered personal brand profile
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                id="name"
-                placeholder="Enter full name"
-                value={newBrand.name}
-                onChange={(e) => setNewBrand({ ...newBrand, name: e.target.value })}
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={newBrand.name}
+                  onChange={(e) => setNewBrand(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Input
+                  id="role"
+                  value={newBrand.role}
+                  onChange={(e) => setNewBrand(prev => ({ ...prev, role: e.target.value }))}
+                  placeholder="Content Strategist"
+                  required
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role/Title *</Label>
-              <Input
-                id="role"
-                placeholder="e.g., Content Strategist, CEO, Marketing Director"
-                value={newBrand.role}
-                onChange={(e) => setNewBrand({ ...newBrand, role: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="company">Company *</Label>
+            <div>
+              <Label htmlFor="company">Company</Label>
               <Input
                 id="company"
-                placeholder="Company or organization name"
                 value={newBrand.company}
-                onChange={(e) => setNewBrand({ ...newBrand, company: e.target.value })}
+                onChange={(e) => setNewBrand(prev => ({ ...prev, company: e.target.value }))}
+                placeholder="Acme Inc"
+                required
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="bio">Bio</Label>
               <Textarea
                 id="bio"
-                placeholder="Brief professional bio..."
                 value={newBrand.bio}
-                onChange={(e) => setNewBrand({ ...newBrand, bio: e.target.value })}
+                onChange={(e) => setNewBrand(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Describe your expertise and mission..."
                 rows={3}
               />
             </div>
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="toneOfVoice">Tone of Voice (comma-separated)</Label>
               <Input
                 id="toneOfVoice"
-                placeholder="e.g., Professional, Innovative, Authentic"
                 value={newBrand.toneOfVoice}
-                onChange={(e) => setNewBrand({ ...newBrand, toneOfVoice: e.target.value })}
+                onChange={(e) => setNewBrand(prev => ({ ...prev, toneOfVoice: e.target.value }))}
+                placeholder="Professional, Innovative, Educational"
               />
             </div>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsCreatingBrand(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateBrand}>
-              Create Brand
-            </Button>
+            <div className="flex space-x-2 pt-4">
+              <Button onClick={handleCreateBrand}>
+                Create Brand
+              </Button>
+              <Button variant="outline" onClick={() => setIsCreatingBrand(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Create Client Dialog */}
-      <Dialog open={isCreatingClient} onOpenChange={setIsCreatingClient}>
-        <DialogContent className="sm:max-w-[600px]">
+      {/* Add Source Dialog */}
+      <Dialog open={isAddingSource} onOpenChange={setIsAddingSource}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add New Client</DialogTitle>
+            <DialogTitle>Add Content Source</DialogTitle>
             <DialogDescription>
-              Add a new client to your workspace and assign personal brands.
+              Add articles, videos, podcasts, or other content to your knowledge base
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="clientName">Client Name *</Label>
-                <Input
-                  id="clientName"
-                  placeholder="Enter client company name"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="industry">Industry *</Label>
-                <Input
-                  id="industry"
-                  placeholder="e.g., Technology, Healthcare, Finance"
-                  value={newClient.industry}
-                  onChange={(e) => setNewClient({ ...newClient, industry: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="size">Company Size</Label>
-                <Select value={newClient.size} onValueChange={(value: 'startup' | 'small' | 'medium' | 'enterprise') => setNewClient({ ...newClient, size: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="startup">Startup (1-50)</SelectItem>
-                    <SelectItem value="small">Small (51-200)</SelectItem>
-                    <SelectItem value="medium">Medium (201-1000)</SelectItem>
-                    <SelectItem value="enterprise">Enterprise (1000+)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="contractValue">Monthly Contract Value</Label>
-                <Input
-                  id="contractValue"
-                  type="number"
-                  placeholder="0"
-                  value={newClient.contractValue}
-                  onChange={(e) => setNewClient({ ...newClient, contractValue: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-base font-medium">Primary Contact</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contactName">Contact Name *</Label>
-                  <Input
-                    id="contactName"
-                    placeholder="Primary contact name"
-                    value={newClient.contactName}
-                    onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contactEmail">Contact Email *</Label>
-                  <Input
-                    id="contactEmail"
-                    type="email"
-                    placeholder="contact@company.com"
-                    value={newClient.contactEmail}
-                    onChange={(e) => setNewClient({ ...newClient, contactEmail: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="contactRole">Contact Role</Label>
-                <Input
-                  id="contactRole"
-                  placeholder="e.g., Marketing Director, CEO"
-                  value={newClient.contactRole}
-                  onChange={(e) => setNewClient({ ...newClient, contactRole: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsCreatingClient(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateClient}>
-              Add Client
-            </Button>
-          </div>
+          <AddSourceForm onSubmit={addContentSource} onCancel={() => setIsAddingSource(false)} />
         </DialogContent>
       </Dialog>
-
-      {/* Clients & Strategy Documents Tab */}
-      {selectedBrand && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="clients">Client Connections</TabsTrigger>
-            <TabsTrigger value="strategy">Strategy Documents</TabsTrigger>
-            <TabsTrigger value="workspace-clients">Workspace Clients</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="clients" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Connected Clients</CardTitle>
-                <CardDescription>
-                  Manage client relationships and permissions for {selectedBrand.name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedBrand.clientConnections.length > 0 ? (
-                  <div className="space-y-3">
-                    {selectedBrand.clientConnections.map((connection) => (
-                      <div key={connection.clientId} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{connection.clientName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {connection.role} • Connected {new Date(connection.dateConnected).toLocaleDateString()}
-                          </p>
-                          <div className="flex gap-1 mt-1">
-                            {connection.permissions.map((perm, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">{perm}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <Badge variant={connection.status === 'active' ? 'default' : 'secondary'}>
-                          {connection.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No client connections yet</p>
-                    <p className="text-sm text-muted-foreground">Assign this brand to clients from the workspace tab</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="strategy" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-medium">Strategy Documents</h3>
-                <p className="text-sm text-muted-foreground">ICP definitions, content archetypes, and brand guidelines</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add ICP
-                </Button>
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Archetype
-                </Button>
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Guidelines
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4">
-              {selectedBrand.strategyDocuments.map((doc) => (
-                <Card key={doc.id}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-base">{doc.title}</CardTitle>
-                        <CardDescription>
-                          {doc.type.toUpperCase()} • Updated {new Date(doc.updatedAt).toLocaleDateString()}
-                        </CardDescription>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {doc.clientId && (
-                          <Badge variant="outline" className="text-xs">
-                            {selectedBrand.clientConnections.find(c => c.clientId === doc.clientId)?.clientName}
-                          </Badge>
-                        )}
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <pre className="text-sm whitespace-pre-wrap">
-                        {JSON.stringify(doc.content, null, 2)}
-                      </pre>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {selectedBrand.strategyDocuments.length === 0 && (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No strategy documents yet</p>
-                    <p className="text-sm text-muted-foreground">Create ICP definitions, content archetypes, and brand guidelines</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="workspace-clients" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workspace Clients</CardTitle>
-                <CardDescription>
-                  All clients in {selectedWorkspace.name} workspace
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {selectedWorkspace.clients.map((client) => (
-                    <div key={client.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <p className="font-medium">{client.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {client.industry} • {client.size} • ${client.contractValue.toLocaleString()}/mo
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Contact: {client.primaryContact.name} ({client.primaryContact.email})
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                          {client.status}
-                        </Badge>
-                        {client.assignedBrands.includes(selectedBrand.id) ? (
-                          <Badge variant="outline" className="bg-green-50 text-green-700">
-                            Assigned
-                          </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => assignBrandToClient(selectedBrand.id, client.id)}
-                          >
-                            Assign
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
     </div>
+  );
+}
+
+// Add Source Form Component
+function AddSourceForm({ onSubmit, onCancel }: { onSubmit: (data: Partial<ContentSource>) => void, onCancel: () => void }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'article' as ContentSource['type'],
+    content: '',
+    summary: '',
+    tags: '',
+    source: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="type">Type</Label>
+          <Select value={formData.type} onValueChange={(value: ContentSource['type']) => 
+            setFormData(prev => ({ ...prev, type: value }))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="article">Article</SelectItem>
+              <SelectItem value="video">Video</SelectItem>
+              <SelectItem value="audio">Audio/Podcast</SelectItem>
+              <SelectItem value="document">Document</SelectItem>
+              <SelectItem value="url">URL/Link</SelectItem>
+              <SelectItem value="image">Image</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="source">Source</Label>
+        <Input
+          id="source"
+          value={formData.source}
+          onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
+          placeholder="Website, Publication, etc."
+        />
+      </div>
+      <div>
+        <Label htmlFor="summary">Summary</Label>
+        <Textarea
+          id="summary"
+          value={formData.summary}
+          onChange={(e) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
+          placeholder="Brief description of the content..."
+          rows={2}
+        />
+      </div>
+      <div>
+        <Label htmlFor="content">Content</Label>
+        <Textarea
+          id="content"
+          value={formData.content}
+          onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+          placeholder="Full content or key excerpts..."
+          rows={4}
+        />
+      </div>
+      <div>
+        <Label htmlFor="tags">Tags (comma-separated)</Label>
+        <Input
+          id="tags"
+          value={formData.tags}
+          onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+          placeholder="web3, blockchain, marketing"
+        />
+      </div>
+      <div className="flex space-x-2 pt-4">
+        <Button type="submit">
+          Add Source
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }
