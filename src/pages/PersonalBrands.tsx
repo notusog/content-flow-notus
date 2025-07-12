@@ -48,6 +48,38 @@ interface PersonalBrand {
     contentScore: number;
   };
   lastUpdated: string;
+  // Enhanced connection system
+  workspaceId: string;
+  clientConnections: ClientConnection[];
+  permissions: BrandPermissions;
+  strategyDocuments: StrategyDocument[];
+}
+
+interface ClientConnection {
+  clientId: string;
+  clientName: string;
+  role: 'primary' | 'secondary' | 'consultant';
+  permissions: string[];
+  dateConnected: string;
+  status: 'active' | 'paused' | 'completed';
+}
+
+interface BrandPermissions {
+  canCreateContent: boolean;
+  canPublishContent: boolean;
+  canAccessAnalytics: boolean;
+  canManageClients: boolean;
+  maxClientsAllowed: number;
+}
+
+interface StrategyDocument {
+  id: string;
+  type: 'icp' | 'content-archetype' | 'brand-guidelines' | 'content-calendar';
+  title: string;
+  content: any;
+  clientId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface LinkedInPost {
@@ -62,30 +94,129 @@ interface LinkedInPost {
 interface Workspace {
   id: string;
   name: string;
-  type: 'company' | 'personal';
-  members: string[];
+  type: 'company' | 'personal' | 'agency' | 'enterprise';
+  members: WorkspaceMember[];
   personalBrands: string[];
+  clients: WorkspaceClient[];
   description: string;
+  settings: WorkspaceSettings;
+  billing: BillingInfo;
+}
+
+interface WorkspaceMember {
+  userId: string;
+  name: string;
+  email: string;
+  role: 'owner' | 'admin' | 'manager' | 'creator' | 'viewer';
+  permissions: string[];
+  joinedAt: string;
+}
+
+interface WorkspaceClient {
+  id: string;
+  name: string;
+  industry: string;
+  size: 'startup' | 'small' | 'medium' | 'enterprise';
+  status: 'active' | 'onboarding' | 'paused' | 'completed';
+  assignedBrands: string[];
+  contractValue: number;
+  startDate: string;
+  endDate?: string;
+  primaryContact: {
+    name: string;
+    email: string;
+    role: string;
+  };
+}
+
+interface WorkspaceSettings {
+  defaultBrandPermissions: BrandPermissions;
+  contentApprovalRequired: boolean;
+  clientAccessLevel: 'full' | 'limited' | 'view-only';
+  brandingCustomization: boolean;
 }
 
 const mockWorkspaces: Workspace[] = [
   {
     id: 'notus-company',
-    name: 'Notus Company',
-    type: 'company',
-    members: ['marvin-sangines', 'max-radman', 'tim-chilling', 'luca-wetzel', 'selim-burcu'],
+    name: 'Notus Agency',
+    type: 'agency',
+    members: [
+      { userId: 'marvin-sangines', name: 'Marvin Sangines', email: 'marvin@notus.com', role: 'owner', permissions: ['all'], joinedAt: '2024-01-01' },
+      { userId: 'max-radman', name: 'Max Radman', email: 'max@notus.com', role: 'manager', permissions: ['content:create', 'content:edit', 'analytics:view'], joinedAt: '2024-01-02' },
+      { userId: 'tim-chilling', name: 'Tim Chilling', email: 'tim@notus.com', role: 'creator', permissions: ['content:create'], joinedAt: '2024-01-03' }
+    ],
     personalBrands: ['marvin-sangines', 'max-radman'],
-    description: 'Main company workspace for Notus content strategy'
+    clients: [
+      {
+        id: 'techcorp-client',
+        name: 'TechCorp Solutions',
+        industry: 'Technology',
+        size: 'enterprise',
+        status: 'active',
+        assignedBrands: ['marvin-sangines'],
+        contractValue: 15000,
+        startDate: '2024-01-01',
+        primaryContact: { name: 'Sarah Johnson', email: 'sarah@techcorp.com', role: 'Marketing Director' }
+      },
+      {
+        id: 'saas-startup-client',
+        name: 'SaaS Growth Co',
+        industry: 'Software',
+        size: 'startup',
+        status: 'active',
+        assignedBrands: ['max-radman'],
+        contractValue: 8000,
+        startDate: '2024-01-15',
+        primaryContact: { name: 'Mike Chen', email: 'mike@saasgrowth.com', role: 'CEO' }
+      }
+    ],
+    description: 'Professional content marketing agency serving B2B companies',
+    settings: {
+      defaultBrandPermissions: { canCreateContent: true, canPublishContent: false, canAccessAnalytics: true, canManageClients: false, maxClientsAllowed: 5 },
+      contentApprovalRequired: true,
+      clientAccessLevel: 'limited',
+      brandingCustomization: true
+    },
+    billing: { plan: 'pro', monthlyRevenue: 23000, nextBillingDate: '2024-02-01' }
   },
   {
-    id: 'personal-workspace',
-    name: 'Personal Brands',
-    type: 'personal',
-    members: ['marvin-sangines', 'vicktoria-klich'],
-    personalBrands: ['marvin-sangines', 'vicktoria-klich'],
-    description: 'Individual personal brand management'
+    id: 'w3-group-workspace',
+    name: 'w3.group',
+    type: 'company',
+    members: [
+      { userId: 'vicktoria-klich', name: 'Vicktoria Klich', email: 'vicky@w3.group', role: 'owner', permissions: ['all'], joinedAt: '2024-01-01' }
+    ],
+    personalBrands: ['vicktoria-klich'],
+    clients: [
+      {
+        id: 'web3-clients',
+        name: 'Internal Brand Building',
+        industry: 'Web3',
+        size: 'small',
+        status: 'active',
+        assignedBrands: ['vicktoria-klich'],
+        contractValue: 0,
+        startDate: '2024-01-01',
+        primaryContact: { name: 'Vicktoria Klich', email: 'vicky@w3.group', role: 'Co-founder' }
+      }
+    ],
+    description: 'Web3 innovation company focused on decentralized solutions',
+    settings: {
+      defaultBrandPermissions: { canCreateContent: true, canPublishContent: true, canAccessAnalytics: true, canManageClients: true, maxClientsAllowed: 10 },
+      contentApprovalRequired: false,
+      clientAccessLevel: 'full',
+      brandingCustomization: true
+    },
+    billing: { plan: 'enterprise', monthlyRevenue: 0, nextBillingDate: '2024-02-01' }
   }
 ];
+
+interface BillingInfo {
+  plan: 'free' | 'pro' | 'enterprise';
+  monthlyRevenue: number;
+  nextBillingDate: string;
+}
 
 const mockPersonalBrands: PersonalBrand[] = [
   {
@@ -96,6 +227,42 @@ const mockPersonalBrands: PersonalBrand[] = [
     avatar: '/lovable-uploads/76a444dc-5aff-491b-bbfc-670b6193d6c7.png',
     bio: 'Changing the way people think about web3 | Co-founder w3.group | Based in Berlin | Top Voice on LinkedIn with 20,406 followers',
     toneOfVoice: ['Innovative', 'Web3-focused', 'Educational', 'Thought-leadership', 'Accessible'],
+    workspaceId: 'w3-group-workspace',
+    clientConnections: [
+      {
+        clientId: 'web3-clients',
+        clientName: 'Internal Brand Building',
+        role: 'primary',
+        permissions: ['content:create', 'content:publish', 'analytics:view'],
+        dateConnected: '2024-01-01',
+        status: 'active'
+      }
+    ],
+    permissions: {
+      canCreateContent: true,
+      canPublishContent: true,
+      canAccessAnalytics: true,
+      canManageClients: true,
+      maxClientsAllowed: 10
+    },
+    strategyDocuments: [
+      {
+        id: 'vk-icp-1',
+        type: 'icp',
+        title: 'Web3 Founder ICP',
+        content: { demographics: 'Tech founders, CTOs, Web3 enthusiasts', psychographics: 'Innovation-driven, early adopters' },
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-16'
+      },
+      {
+        id: 'vk-brand-1',
+        type: 'brand-guidelines',
+        title: 'w3.group Brand Voice',
+        content: { voice: 'Educational yet passionate', tone: 'Accessible expertise', style: 'Future-focused storytelling' },
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-16'
+      }
+    ],
     approvedContent: [
       {
         id: 'vk1',
@@ -136,6 +303,53 @@ const mockPersonalBrands: PersonalBrand[] = [
     avatar: '/api/placeholder/150/150',
     bio: 'Helping B2B companies scale through strategic content and personal branding. 5+ years in growth marketing.',
     toneOfVoice: ['Strategic', 'Data-driven', 'Authentic', 'Growth-focused', 'Educational'],
+    workspaceId: 'notus-company',
+    clientConnections: [
+      {
+        clientId: 'techcorp-client',
+        clientName: 'TechCorp Solutions',
+        role: 'primary',
+        permissions: ['content:create', 'content:edit', 'analytics:view'],
+        dateConnected: '2024-01-01',
+        status: 'active'
+      }
+    ],
+    permissions: {
+      canCreateContent: true,
+      canPublishContent: false,
+      canAccessAnalytics: true,
+      canManageClients: false,
+      maxClientsAllowed: 5
+    },
+    strategyDocuments: [
+      {
+        id: 'ms-icp-techcorp',
+        type: 'icp',
+        title: 'TechCorp B2B SaaS ICP',
+        content: {
+          demographics: 'B2B SaaS founders, Marketing Directors, Growth teams',
+          companySize: '50-500 employees',
+          painPoints: 'Lead generation, content strategy, thought leadership',
+          goals: 'Increase qualified leads, build authority, scale content'
+        },
+        clientId: 'techcorp-client',
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-15'
+      },
+      {
+        id: 'ms-archetype-techcorp',
+        type: 'content-archetype',
+        title: 'TechCorp Content Strategy',
+        content: {
+          contentPillars: ['Thought Leadership', 'Industry Insights', 'Case Studies', 'Educational Content'],
+          formats: ['LinkedIn posts', 'Video content', 'Whitepapers', 'Webinars'],
+          frequency: '5 posts/week LinkedIn, 1 video/week, 1 whitepaper/month'
+        },
+        clientId: 'techcorp-client',
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-15'
+      }
+    ],
     approvedContent: [
       {
         id: '1',
@@ -176,6 +390,40 @@ const mockPersonalBrands: PersonalBrand[] = [
     avatar: '/api/placeholder/150/150',
     bio: 'Creative content strategist focused on authentic brand storytelling and social media growth.',
     toneOfVoice: ['Creative', 'Authentic', 'Energetic', 'Story-driven', 'Relatable'],
+    workspaceId: 'notus-company',
+    clientConnections: [
+      {
+        clientId: 'saas-startup-client',
+        clientName: 'SaaS Growth Co',
+        role: 'primary',
+        permissions: ['content:create', 'content:edit', 'analytics:view'],
+        dateConnected: '2024-01-15',
+        status: 'active'
+      }
+    ],
+    permissions: {
+      canCreateContent: true,
+      canPublishContent: false,
+      canAccessAnalytics: true,
+      canManageClients: false,
+      maxClientsAllowed: 3
+    },
+    strategyDocuments: [
+      {
+        id: 'mr-brand-saas',
+        type: 'brand-guidelines',
+        title: 'SaaS Growth Co Brand Voice',
+        content: {
+          voice: 'Authentic and energetic',
+          tone: 'Relatable storytelling',
+          style: 'Conversational with creative flair',
+          doNots: 'Corporate jargon, overly formal language'
+        },
+        clientId: 'saas-startup-client',
+        createdAt: '2024-01-15',
+        updatedAt: '2024-01-15'
+      }
+    ],
     approvedContent: [
       {
         id: '3',
@@ -207,13 +455,26 @@ export default function PersonalBrands() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace>(mockWorkspaces[0]);
   const [selectedBrand, setSelectedBrand] = useState<PersonalBrand | null>(mockPersonalBrands[0]);
   const [personalBrands, setPersonalBrands] = useState<PersonalBrand[]>(mockPersonalBrands);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(mockWorkspaces);
   const [isCreatingBrand, setIsCreatingBrand] = useState(false);
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<WorkspaceClient | null>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const [newBrand, setNewBrand] = useState({
     name: '',
     role: '',
     company: '',
     bio: '',
     toneOfVoice: '',
+  });
+  const [newClient, setNewClient] = useState({
+    name: '',
+    industry: '',
+    size: 'small' as 'startup' | 'small' | 'medium' | 'enterprise',
+    contactName: '',
+    contactEmail: '',
+    contactRole: '',
+    contractValue: 0,
   });
 
   const workspaceBrands = personalBrands.filter(brand => 
@@ -245,6 +506,10 @@ export default function PersonalBrands() {
       avatar: '/api/placeholder/150/150',
       bio: newBrand.bio,
       toneOfVoice: newBrand.toneOfVoice.split(',').map(t => t.trim()).filter(t => t),
+      workspaceId: selectedWorkspace.id,
+      clientConnections: [],
+      permissions: selectedWorkspace.settings.defaultBrandPermissions,
+      strategyDocuments: [],
       approvedContent: [],
       llmSettings: {
         primaryModel: 'Claude 3.5 Sonnet',
@@ -262,6 +527,14 @@ export default function PersonalBrands() {
     };
 
     setPersonalBrands([...personalBrands, brand]);
+    
+    // Update workspace to include new brand
+    setWorkspaces(prev => prev.map(w => 
+      w.id === selectedWorkspace.id 
+        ? { ...w, personalBrands: [...w.personalBrands, brand.id] }
+        : w
+    ));
+    
     setSelectedBrand(brand);
     setIsCreatingBrand(false);
     setNewBrand({ name: '', role: '', company: '', bio: '', toneOfVoice: '' });
@@ -269,6 +542,86 @@ export default function PersonalBrands() {
     toast({
       title: "Brand Created",
       description: `Successfully created brand profile for ${brand.name}`,
+    });
+  };
+
+  const handleCreateClient = () => {
+    if (!newClient.name || !newClient.industry || !newClient.contactName || !newClient.contactEmail) {
+      toast({
+        title: "Error", 
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const client: WorkspaceClient = {
+      id: newClient.name.toLowerCase().replace(/\s+/g, '-'),
+      name: newClient.name,
+      industry: newClient.industry,
+      size: newClient.size,
+      status: 'onboarding',
+      assignedBrands: [],
+      contractValue: newClient.contractValue,
+      startDate: new Date().toISOString().split('T')[0],
+      primaryContact: {
+        name: newClient.contactName,
+        email: newClient.contactEmail,
+        role: newClient.contactRole,
+      }
+    };
+
+    setWorkspaces(prev => prev.map(w => 
+      w.id === selectedWorkspace.id 
+        ? { ...w, clients: [...w.clients, client] }
+        : w
+    ));
+
+    setIsCreatingClient(false);
+    setNewClient({ name: '', industry: '', size: 'small', contactName: '', contactEmail: '', contactRole: '', contractValue: 0 });
+    
+    toast({
+      title: "Client Added",
+      description: `Successfully added ${client.name} to workspace`,
+    });
+  };
+
+  const assignBrandToClient = (brandId: string, clientId: string) => {
+    setWorkspaces(prev => prev.map(w => 
+      w.id === selectedWorkspace.id 
+        ? {
+            ...w, 
+            clients: w.clients.map(c => 
+              c.id === clientId 
+                ? { ...c, assignedBrands: [...c.assignedBrands, brandId] }
+                : c
+            )
+          }
+        : w
+    ));
+
+    setPersonalBrands(prev => prev.map(b => 
+      b.id === brandId 
+        ? {
+            ...b,
+            clientConnections: [
+              ...b.clientConnections,
+              {
+                clientId,
+                clientName: selectedWorkspace.clients.find(c => c.id === clientId)?.name || '',
+                role: 'primary',
+                permissions: ['content:create', 'content:edit', 'analytics:view'],
+                dateConnected: new Date().toISOString().split('T')[0],
+                status: 'active'
+              }
+            ]
+          }
+        : b
+    ));
+
+    toast({
+      title: "Brand Assigned",
+      description: "Brand successfully assigned to client",
     });
   };
 
@@ -294,43 +647,70 @@ export default function PersonalBrands() {
         </Button>
       </div>
 
-      {/* Workspace Selector */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            <Building className="h-5 w-5 text-muted-foreground" />
-            <Select 
-              value={selectedWorkspace.id} 
-              onValueChange={(value) => {
-                const workspace = mockWorkspaces.find(w => w.id === value);
-                if (workspace) setSelectedWorkspace(workspace);
-              }}
-            >
-              <SelectTrigger className="w-[300px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {mockWorkspaces.map((workspace) => (
-                  <SelectItem key={workspace.id} value={workspace.id}>
-                    <div className="flex items-center space-x-2">
-                      {workspace.type === 'company' ? (
-                        <Building className="h-4 w-4" />
-                      ) : (
-                        <User className="h-4 w-4" />
-                      )}
-                      <span>{workspace.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {workspace.personalBrands.length} brands
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">{selectedWorkspace.description}</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Workspace Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <Card className="lg:col-span-3">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <Select 
+                  value={selectedWorkspace.id} 
+                  onValueChange={(value) => {
+                    const workspace = workspaces.find(w => w.id === value);
+                    if (workspace) setSelectedWorkspace(workspace);
+                  }}
+                >
+                  <SelectTrigger className="w-[300px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workspaces.map((workspace) => (
+                      <SelectItem key={workspace.id} value={workspace.id}>
+                        <div className="flex items-center space-x-2">
+                          {workspace.type === 'company' ? (
+                            <Building className="h-4 w-4" />
+                          ) : (
+                            <User className="h-4 w-4" />
+                          )}
+                          <span>{workspace.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {workspace.personalBrands.length} brands
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div>
+                  <p className="text-sm font-medium">{selectedWorkspace.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedWorkspace.clients.length} clients • {selectedWorkspace.members.length} members
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => setIsCreatingClient(true)} variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Client
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">
+                ${selectedWorkspace.billing.monthlyRevenue.toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground">Monthly Revenue</p>
+              <Badge variant="outline" className="mt-2">
+                {selectedWorkspace.billing.plan}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Brand List */}
@@ -662,6 +1042,275 @@ export default function PersonalBrands() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Client Dialog */}
+      <Dialog open={isCreatingClient} onOpenChange={setIsCreatingClient}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+            <DialogDescription>
+              Add a new client to your workspace and assign personal brands.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientName">Client Name *</Label>
+                <Input
+                  id="clientName"
+                  placeholder="Enter client company name"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="industry">Industry *</Label>
+                <Input
+                  id="industry"
+                  placeholder="e.g., Technology, Healthcare, Finance"
+                  value={newClient.industry}
+                  onChange={(e) => setNewClient({ ...newClient, industry: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="size">Company Size</Label>
+                <Select value={newClient.size} onValueChange={(value: 'startup' | 'small' | 'medium' | 'enterprise') => setNewClient({ ...newClient, size: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="startup">Startup (1-50)</SelectItem>
+                    <SelectItem value="small">Small (51-200)</SelectItem>
+                    <SelectItem value="medium">Medium (201-1000)</SelectItem>
+                    <SelectItem value="enterprise">Enterprise (1000+)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contractValue">Monthly Contract Value</Label>
+                <Input
+                  id="contractValue"
+                  type="number"
+                  placeholder="0"
+                  value={newClient.contractValue}
+                  onChange={(e) => setNewClient({ ...newClient, contractValue: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-base font-medium">Primary Contact</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactName">Contact Name *</Label>
+                  <Input
+                    id="contactName"
+                    placeholder="Primary contact name"
+                    value={newClient.contactName}
+                    onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contactEmail">Contact Email *</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    placeholder="contact@company.com"
+                    value={newClient.contactEmail}
+                    onChange={(e) => setNewClient({ ...newClient, contactEmail: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactRole">Contact Role</Label>
+                <Input
+                  id="contactRole"
+                  placeholder="e.g., Marketing Director, CEO"
+                  value={newClient.contactRole}
+                  onChange={(e) => setNewClient({ ...newClient, contactRole: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsCreatingClient(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateClient}>
+              Add Client
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clients & Strategy Documents Tab */}
+      {selectedBrand && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="clients">Client Connections</TabsTrigger>
+            <TabsTrigger value="strategy">Strategy Documents</TabsTrigger>
+            <TabsTrigger value="workspace-clients">Workspace Clients</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="clients" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Connected Clients</CardTitle>
+                <CardDescription>
+                  Manage client relationships and permissions for {selectedBrand.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedBrand.clientConnections.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedBrand.clientConnections.map((connection) => (
+                      <div key={connection.clientId} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{connection.clientName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {connection.role} • Connected {new Date(connection.dateConnected).toLocaleDateString()}
+                          </p>
+                          <div className="flex gap-1 mt-1">
+                            {connection.permissions.map((perm, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">{perm}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <Badge variant={connection.status === 'active' ? 'default' : 'secondary'}>
+                          {connection.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No client connections yet</p>
+                    <p className="text-sm text-muted-foreground">Assign this brand to clients from the workspace tab</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="strategy" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium">Strategy Documents</h3>
+                <p className="text-sm text-muted-foreground">ICP definitions, content archetypes, and brand guidelines</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add ICP
+                </Button>
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Archetype
+                </Button>
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Guidelines
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              {selectedBrand.strategyDocuments.map((doc) => (
+                <Card key={doc.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-base">{doc.title}</CardTitle>
+                        <CardDescription>
+                          {doc.type.toUpperCase()} • Updated {new Date(doc.updatedAt).toLocaleDateString()}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {doc.clientId && (
+                          <Badge variant="outline" className="text-xs">
+                            {selectedBrand.clientConnections.find(c => c.clientId === doc.clientId)?.clientName}
+                          </Badge>
+                        )}
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <pre className="text-sm whitespace-pre-wrap">
+                        {JSON.stringify(doc.content, null, 2)}
+                      </pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {selectedBrand.strategyDocuments.length === 0 && (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No strategy documents yet</p>
+                    <p className="text-sm text-muted-foreground">Create ICP definitions, content archetypes, and brand guidelines</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="workspace-clients" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workspace Clients</CardTitle>
+                <CardDescription>
+                  All clients in {selectedWorkspace.name} workspace
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {selectedWorkspace.clients.map((client) => (
+                    <div key={client.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <p className="font-medium">{client.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {client.industry} • {client.size} • ${client.contractValue.toLocaleString()}/mo
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Contact: {client.primaryContact.name} ({client.primaryContact.email})
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
+                          {client.status}
+                        </Badge>
+                        {client.assignedBrands.includes(selectedBrand.id) ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            Assigned
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => assignBrandToClient(selectedBrand.id, client.id)}
+                          >
+                            Assign
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
