@@ -4,11 +4,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { UserProvider, useUser } from "@/contexts/UserContext";
 import { ContentProvider } from "@/contexts/ContentContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { PersonalBrandProvider } from "@/contexts/PersonalBrandContext";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import Dashboard from "./pages/Dashboard";
@@ -27,9 +28,9 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, profile, loading } = useUser();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -37,8 +38,12 @@ function ProtectedRoutes() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <Auth />;
+  }
+
+  if (!profile?.onboarding_completed) {
+    return <Onboarding />;
   }
 
   return (
@@ -67,7 +72,7 @@ function ProtectedRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
+      <UserProvider>
         <WorkspaceProvider>
           <PersonalBrandProvider>
             <ContentProvider>
@@ -79,7 +84,7 @@ const App = () => (
             </ContentProvider>
           </PersonalBrandProvider>
         </WorkspaceProvider>
-      </AuthProvider>
+      </UserProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

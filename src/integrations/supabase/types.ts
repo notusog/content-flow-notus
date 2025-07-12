@@ -109,8 +109,78 @@ export type Database = {
         }
         Relationships: []
       }
+      client_invitations: {
+        Row: {
+          client_name: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invitation_token: string | null
+          status: string
+          strategist_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_name: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string | null
+          status?: string
+          strategist_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string | null
+          status?: string
+          strategist_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_relationships: {
+        Row: {
+          accepted_at: string | null
+          client_id: string
+          created_at: string
+          id: string
+          invited_at: string | null
+          status: string
+          strategist_id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          status?: string
+          strategist_id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          invited_at?: string | null
+          status?: string
+          strategist_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_pieces: {
         Row: {
+          client_id: string | null
           content: string
           created_at: string
           id: string
@@ -125,6 +195,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          client_id?: string | null
           content: string
           created_at?: string
           id?: string
@@ -139,6 +210,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          client_id?: string | null
           content?: string
           created_at?: string
           id?: string
@@ -171,6 +243,7 @@ export type Database = {
       }
       content_sources: {
         Row: {
+          client_id: string | null
           content: string
           created_at: string
           id: string
@@ -187,6 +260,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          client_id?: string | null
           content: string
           created_at?: string
           id?: string
@@ -203,6 +277,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          client_id?: string | null
           content?: string
           created_at?: string
           id?: string
@@ -319,6 +394,7 @@ export type Database = {
           banner_url: string | null
           bio: string | null
           brand_colors: Json | null
+          client_id: string | null
           created_at: string
           description: string | null
           expertise_areas: string[] | null
@@ -336,6 +412,7 @@ export type Database = {
           banner_url?: string | null
           bio?: string | null
           brand_colors?: Json | null
+          client_id?: string | null
           created_at?: string
           description?: string | null
           expertise_areas?: string[] | null
@@ -353,6 +430,7 @@ export type Database = {
           banner_url?: string | null
           bio?: string | null
           brand_colors?: Json | null
+          client_id?: string | null
           created_at?: string
           description?: string | null
           expertise_areas?: string[] | null
@@ -364,6 +442,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           workspace_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          onboarding_completed: boolean | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          onboarding_completed?: boolean | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          onboarding_completed?: boolean | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -433,6 +547,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       workspace_context: {
         Row: {
           content: string
@@ -482,6 +617,7 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          client_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -491,6 +627,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -500,6 +637,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -515,10 +653,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_client_data: {
+        Args: { _user_id: string; _client_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "content_strategist" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -645,6 +793,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["content_strategist", "client"],
+    },
   },
 } as const

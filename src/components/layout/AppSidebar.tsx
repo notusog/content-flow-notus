@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +25,9 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  Calendar
+  Calendar,
+  Users,
+  Building
 } from 'lucide-react';
 
 interface NavItem {
@@ -134,7 +136,15 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { user } = useAuth();
+  const { 
+    user, 
+    profile, 
+    isContentStrategist, 
+    isClient, 
+    clientRelationships, 
+    selectedClient, 
+    selectClient 
+  } = useUser();
   const currentPath = location.pathname;
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(
     navigationGroups.reduce((acc, group) => ({
@@ -161,8 +171,14 @@ export function AppSidebar() {
       ? "bg-primary/10 text-primary border-r-2 border-primary font-medium" 
       : "hover:bg-muted/60 text-muted-foreground hover:text-foreground";
 
-  // All authenticated users can see all navigation groups
-  const hasGroupPermission = (items: NavItem[]) => true;
+  // Filter navigation based on user role
+  const filteredGroups = navigationGroups.filter(group => {
+    if (isClient && group.title === 'Setup') {
+      // Clients don't need full setup access
+      return false;
+    }
+    return true;
+  });
 
   return (
     <Sidebar className={`${collapsed ? "w-14" : "w-64"} border-r border-border/60`}>
@@ -182,9 +198,30 @@ export function AppSidebar() {
           </div>
         )}
 
+        {/* Client Switcher for Content Strategists */}
+        {!collapsed && isContentStrategist && clientRelationships.length > 0 && (
+          <div className="px-6 mb-4">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Current Client
+            </div>
+            <select
+              value={selectedClient?.id || ''}
+              onChange={(e) => selectClient(e.target.value || null)}
+              className="w-full p-2 text-sm border rounded-lg bg-background"
+            >
+              <option value="">Select Client</option>
+              {clientRelationships.map((rel) => (
+                <option key={rel.client_id} value={rel.client_id}>
+                  {rel.client_profile?.full_name || rel.client_profile?.email || 'Unknown Client'}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Navigation Groups */}
         <div className="space-y-1">
-          {navigationGroups.map((group) => {
+          {filteredGroups.map((group) => {
             const visibleItems = group.items; // Show all items for authenticated users
 
             const isGroupOpen = openGroups[group.title];
@@ -245,19 +282,23 @@ export function AppSidebar() {
 
 
         {/* User Info */}
-        {!collapsed && user && (
+        {!collapsed && profile && (
           <div className="px-6 mt-auto pt-4">
             <div className="p-3 rounded-lg bg-muted/40 border">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-primary">
-                    {user.email?.charAt(0).toUpperCase()}
-                  </span>
+                  {isContentStrategist ? (
+                    <Building className="h-4 w-4 text-primary" />
+                  ) : (
+                    <User className="h-4 w-4 text-primary" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{user.email}</p>
+                  <p className="text-xs font-medium truncate">
+                    {profile.full_name || profile.email}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    User
+                    {isContentStrategist ? 'Content Strategist' : 'Client'}
                   </p>
                 </div>
               </div>
