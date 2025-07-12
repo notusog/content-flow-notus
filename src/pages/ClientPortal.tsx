@@ -89,6 +89,7 @@ export default function ClientPortal() {
         .from('content_pieces')
         .select('*')
         .eq('user_id', user?.id)
+        .in('status', ['need_review', 'in_review', 'approved', 'scheduled', 'published'])
         .order('created_at', { ascending: false })
         .limit(20);
 
