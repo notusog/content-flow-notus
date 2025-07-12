@@ -46,3 +46,9 @@ verify_jwt = false
 
 [functions.context-processor]
 verify_jwt = true
+
+[functions.timestamped-transcript]
+verify_jwt = true
+
+[functions.csv-processor]
+verify_jwt = true

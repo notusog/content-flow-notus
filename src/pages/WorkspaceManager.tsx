@@ -207,7 +207,7 @@ export default function WorkspaceManager() {
         <div className="flex gap-2">
           <Dialog open={showLinkedInDialog} onOpenChange={setShowLinkedInDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button>
                 <Sparkles className="h-4 w-4 mr-2" />
                 LinkedIn Post Generator
               </Button>
@@ -239,7 +239,7 @@ export default function WorkspaceManager() {
                     <SelectContent>
                       {sources.map((source) => (
                         <SelectItem key={source.id} value={source.id}>
-                          {source.title}
+                          {source.title} ({source.type})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -263,6 +263,9 @@ export default function WorkspaceManager() {
                 <div className="mt-4 p-4 bg-muted rounded-md">
                   <h4 className="font-medium mb-2">Generated LinkedIn Post:</h4>
                   <div className="whitespace-pre-wrap text-sm">{generatedContent}</div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Character count: {generatedContent.length}
+                  </div>
                 </div>
               )}
             </DialogContent>

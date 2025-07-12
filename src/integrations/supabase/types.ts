@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_reports: {
+        Row: {
+          created_at: string
+          csv_data: Json
+          data_source: string
+          date_range_end: string | null
+          date_range_start: string | null
+          id: string
+          metadata: Json | null
+          raw_csv_text: string | null
+          report_name: string
+          report_type: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          csv_data: Json
+          data_source: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          metadata?: Json | null
+          raw_csv_text?: string | null
+          report_name: string
+          report_type: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          csv_data?: Json
+          data_source?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          metadata?: Json | null
+          raw_csv_text?: string | null
+          report_name?: string
+          report_type?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_reports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_pieces: {
         Row: {
           content: string
@@ -113,6 +169,150 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "content_sources_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linkedin_metrics: {
+        Row: {
+          click_count: number | null
+          comments_count: number | null
+          content_piece_id: string | null
+          created_at: string
+          engagement_count: number | null
+          engagement_rate: number | null
+          id: string
+          impressions: number | null
+          likes_count: number | null
+          linkedin_post_id: string | null
+          post_date: string | null
+          post_url: string | null
+          reach: number | null
+          shares_count: number | null
+          sync_date: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          click_count?: number | null
+          comments_count?: number | null
+          content_piece_id?: string | null
+          created_at?: string
+          engagement_count?: number | null
+          engagement_rate?: number | null
+          id?: string
+          impressions?: number | null
+          likes_count?: number | null
+          linkedin_post_id?: string | null
+          post_date?: string | null
+          post_url?: string | null
+          reach?: number | null
+          shares_count?: number | null
+          sync_date?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          click_count?: number | null
+          comments_count?: number | null
+          content_piece_id?: string | null
+          created_at?: string
+          engagement_count?: number | null
+          engagement_rate?: number | null
+          id?: string
+          impressions?: number | null
+          likes_count?: number | null
+          linkedin_post_id?: string | null
+          post_date?: string | null
+          post_url?: string | null
+          reach?: number | null
+          shares_count?: number | null
+          sync_date?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_metrics_content_piece_id_fkey"
+            columns: ["content_piece_id"]
+            isOneToOne: false
+            referencedRelation: "content_pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_metrics_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transcript_segments: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          end_time_seconds: number | null
+          id: string
+          metadata: Json | null
+          segment_index: number
+          segment_text: string
+          source_id: string
+          speaker_name: string | null
+          start_time_seconds: number | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          end_time_seconds?: number | null
+          id?: string
+          metadata?: Json | null
+          segment_index: number
+          segment_text: string
+          source_id: string
+          speaker_name?: string | null
+          start_time_seconds?: number | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          end_time_seconds?: number | null
+          id?: string
+          metadata?: Json | null
+          segment_index?: number
+          segment_text?: string
+          source_id?: string
+          speaker_name?: string | null
+          start_time_seconds?: number | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcript_segments_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "content_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcript_segments_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
