@@ -50,6 +50,10 @@ interface WorkspaceContextType {
   addPreviousPost: (post: string) => Promise<void>;
   getPreviousPosts: () => WorkspaceContext[];
   getToneOfVoice: () => WorkspaceContext | null;
+  generateLinkedInPost: (prompt: string, options?: {
+    tone?: string;
+    audience?: string;
+  }) => Promise<string>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -344,6 +348,47 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return workspaceContext.find(ctx => ctx.context_type === 'tone_of_voice') || null;
   };
 
+  const generateLinkedInPost = async (prompt: string, options?: {
+    tone?: string;
+    audience?: string;
+  }): Promise<string> => {
+    if (!currentWorkspace || !user) throw new Error('No workspace or user available');
+
+    try {
+      const generatedContent = await generateCopy(prompt, {
+        type: 'linkedin_post',
+        ...options
+      });
+
+      // Save directly to content_pieces table
+      const { data, error } = await supabase
+        .from('content_pieces')
+        .insert({
+          title: `LinkedIn Post - ${new Date().toLocaleDateString()}`,
+          content: generatedContent,
+          platform: 'linkedin',
+          status: 'draft',
+          tags: ['generated', 'linkedin'],
+          user_id: user.id,
+          workspace_id: currentWorkspace.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "LinkedIn Post Generated",
+        description: "Your post has been created and saved to your content library."
+      });
+
+      return generatedContent;
+    } catch (error) {
+      console.error('Error generating LinkedIn post:', error);
+      throw error;
+    }
+  };
+
   return (
     <WorkspaceContext.Provider value={{
       workspaces,
@@ -361,6 +406,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       addPreviousPost,
       getPreviousPosts,
       getToneOfVoice,
+      generateLinkedInPost,
     }}>
       {children}
     </WorkspaceContext.Provider>

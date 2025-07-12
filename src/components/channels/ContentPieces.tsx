@@ -24,6 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import type { Tables } from '@/integrations/supabase/types';
 
 type ContentPiece = Tables<'content_pieces'>;
@@ -36,6 +37,7 @@ interface ContentPiecesProps {
 export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
   const [contentPieces, setContentPieces] = useState<ContentPiece[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,10 +53,10 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
 
   useEffect(() => {
     fetchContentPieces();
-  }, [platform, user]);
+  }, [platform, user, currentWorkspace]);
 
   const fetchContentPieces = async () => {
-    if (!user) return;
+    if (!user || !currentWorkspace) return;
     
     try {
       const { data, error } = await supabase
@@ -62,6 +64,7 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
         .select('*')
         .eq('platform', platform.toLowerCase())
         .eq('user_id', user.id)
+        .eq('workspace_id', currentWorkspace.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -78,7 +81,7 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
   };
 
   const handleCreateContent = async () => {
-    if (!formData.title || !formData.content || !user) {
+    if (!formData.title || !formData.content || !user || !currentWorkspace) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -96,7 +99,8 @@ export function ContentPieces({ platform, icon: Icon }: ContentPiecesProps) {
           platform: formData.platform,
           status: formData.status,
           tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
-          user_id: user.id
+          user_id: user.id,
+          workspace_id: currentWorkspace.id
         })
         .select()
         .single();
