@@ -161,12 +161,12 @@ export default function ContentEngine() {
                 className="pl-10"
               />
             </div>
-            <Select onValueChange={(tag) => setSelectedTags([tag])}>
+            <Select onValueChange={(tag) => setSelectedTags(tag === "all" ? [] : [tag])}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by tag" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All tags</SelectItem>
+                <SelectItem value="all">All tags</SelectItem>
                 {allTags.map(tag => (
                   <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                 ))}
