@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
+import { useUser } from '@/contexts/UserContext';
 import { useWorkspace } from './WorkspaceContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,7 +46,7 @@ export function PersonalBrandProvider({ children }: { children: ReactNode }) {
   const [personalBrands, setPersonalBrands] = useState<PersonalBrand[]>([]);
   const [currentPersonalBrand, setCurrentPersonalBrand] = useState<PersonalBrand | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentWorkspace } = useWorkspace();
   const { toast } = useToast();
 
