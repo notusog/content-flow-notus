@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +23,8 @@ import { ROLE_PERMISSIONS } from '@/types/auth';
 export function AppHeader() {
   const { user, signOut } = useAuth();
   const { workspaces, currentWorkspace, setCurrentWorkspace, createWorkspace } = useWorkspace();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
   if (!user) return null;
 
@@ -27,13 +32,18 @@ export function AppHeader() {
     return email.split('@')[0].slice(0, 2).toUpperCase();
   };
 
-  const handleCreateWorkspace = async (e: React.MouseEvent) => {
+  const handleCreateWorkspace = async () => {
+    if (newWorkspaceName.trim()) {
+      await createWorkspace({ name: newWorkspaceName.trim() });
+      setNewWorkspaceName('');
+      setIsCreateDialogOpen(false);
+    }
+  };
+
+  const handleCreateClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const name = prompt('Enter workspace name:');
-    if (name?.trim()) {
-      await createWorkspace({ name: name.trim() });
-    }
+    setIsCreateDialogOpen(true);
   };
 
   return (
@@ -62,16 +72,58 @@ export function AppHeader() {
                     {workspace.name}
                   </SelectItem>
                 ))}
-                <SelectItem value="__create__">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start p-0 h-auto font-normal"
-                    onClick={handleCreateWorkspace}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Workspace
-                  </Button>
-                </SelectItem>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <SelectItem value="__create__">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start p-0 h-auto font-normal"
+                        onClick={handleCreateClick}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create New Workspace
+                      </Button>
+                    </SelectItem>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Workspace</DialogTitle>
+                      <DialogDescription>
+                        Create a new workspace for organizing your content and projects.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="workspace-name">Workspace Name</Label>
+                        <Input
+                          id="workspace-name"
+                          value={newWorkspaceName}
+                          onChange={(e) => setNewWorkspaceName(e.target.value)}
+                          placeholder="e.g., Personal Brand, Client Project..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleCreateWorkspace();
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsCreateDialogOpen(false);
+                          setNewWorkspaceName('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleCreateWorkspace} disabled={!newWorkspaceName.trim()}>
+                        Create Workspace
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </SelectContent>
             </Select>
           </div>
