@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -26,7 +29,7 @@ interface CSVData {
 }
 
 interface CSVUploaderProps {
-  channel: 'linkedin' | 'youtube' | 'newsletter' | 'lead-magnet';
+  channel: 'linkedin' | 'youtube' | 'newsletter' | 'lead-magnet' | 'personal-brand';
   onDataProcessed: (data: any[]) => void;
 }
 
@@ -35,6 +38,8 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [csvFiles, setCsvFiles] = useState<CSVData[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
 
   const channelConfigs = {
     linkedin: {
@@ -56,6 +61,11 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
       name: 'Lead Magnets',
       expectedColumns: ['Date', 'Downloads', 'Email Signups', 'Source', 'Magnet Title'],
       color: 'bg-green-50 border-green-200'
+    },
+    'personal-brand': {
+      name: 'Personal Brand Content',
+      expectedColumns: ['Title', 'Content', 'Type', 'Tags', 'Source', 'Summary'],
+      color: 'bg-orange-50 border-orange-200'
     }
   };
 
@@ -76,6 +86,73 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
     });
 
     return data;
+  };
+
+  const saveToDatabase = async (data: any[], filename: string) => {
+    if (!user || !currentWorkspace) {
+      toast({
+        title: "Error",
+        description: "Please log in and select a workspace",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (channel === 'personal-brand') {
+        // Save as content sources for personal brand
+        const contentSources = data.map(row => ({
+          title: row.Title || row.title || filename,
+          content: row.Content || row.content || '',
+          type: row.Type || row.type || 'csv_import',
+          tags: row.Tags ? row.Tags.split(',').map(t => t.trim()) : [],
+          source: row.Source || row.source || filename,
+          summary: row.Summary || row.summary || '',
+          user_id: user.id,
+          workspace_id: currentWorkspace.id
+        }));
+
+        const { error } = await supabase
+          .from('content_sources')
+          .insert(contentSources);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: `${data.length} content sources imported successfully`,
+        });
+      } else {
+        // Save as analytics report for analytics channels
+        const { error } = await supabase
+          .from('analytics_reports')
+          .insert({
+            report_name: filename,
+            report_type: channel,
+            data_source: 'csv_upload',
+            csv_data: data,
+            raw_csv_text: JSON.stringify(data),
+            user_id: user.id,
+            workspace_id: currentWorkspace.id
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: `Analytics report "${filename}" saved successfully`,
+        });
+      }
+
+      onDataProcessed(data);
+    } catch (error) {
+      console.error('Error saving to database:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save data to database",
+        variant: "destructive",
+      });
+    }
   };
 
   const simulateProcessing = (data: any[], filename: string) => {
@@ -103,11 +180,9 @@ export function CSVUploader({ channel, onDataProcessed }: CSVUploaderProps) {
                 : file
             )
           );
-          onDataProcessed(data);
-          toast({
-            title: "CSV Processed Successfully",
-            description: `${data.length} rows imported from ${filename}`,
-          });
+          
+          // Save to database when processing is complete
+          saveToDatabase(data, filename);
           setUploading(false);
           return 100;
         }

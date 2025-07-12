@@ -126,6 +126,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const createWorkspace = async (data: { name: string; description?: string }) => {
     if (!user) {
       console.error('No user available for workspace creation');
+      toast({
+        title: "Error",
+        description: "Please log in to create a workspace",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -160,7 +165,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       console.error('Error creating workspace:', error);
       toast({
         title: "Error",
-        description: `Failed to create workspace: ${error.message}`,
+        description: `Failed to create workspace: ${error?.message || 'Unknown error'}`,
         variant: "destructive",
       });
     }
