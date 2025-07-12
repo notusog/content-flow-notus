@@ -12,7 +12,14 @@ import {
   Target,
   ArrowRight,
   Lightbulb,
-  BarChart3
+  BarChart3,
+  Brain,
+  Bot,
+  MessageSquare,
+  Plus,
+  Eye,
+  Settings,
+  Download
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -31,10 +38,10 @@ export default function Dashboard() {
       title: 'Content Strategist Dashboard',
       subtitle: 'Orchestrate high-impact content ecosystems',
       quickActions: [
-        { title: 'Extract Insights', desc: 'Process new client content', icon: Lightbulb, href: '/insights', color: 'bg-blue-50 text-blue-700' },
-        { title: 'Create Content', desc: 'Draft multi-channel campaigns', icon: FileText, href: '/content', color: 'bg-green-50 text-green-700' },
-        { title: 'Schedule Posts', desc: 'Manage content calendar', icon: Calendar, href: '/channels', color: 'bg-purple-50 text-purple-700' },
-        { title: 'View Analytics', desc: 'Track performance metrics', icon: BarChart3, href: '/analytics', color: 'bg-orange-50 text-orange-700' }
+        { title: 'New Content Brief', desc: 'Create content from insights', icon: Plus, href: '/content', color: 'bg-green-50 text-green-700' },
+        { title: 'Content Library', desc: 'Browse client knowledge base', icon: Brain, href: '/library', color: 'bg-blue-50 text-blue-700' },
+        { title: 'Chat with AI', desc: 'Get strategic guidance', icon: MessageSquare, href: '/digital-twins', color: 'bg-purple-50 text-purple-700' },
+        { title: 'Channel Analytics', desc: 'Review performance data', icon: BarChart3, href: '/analytics', color: 'bg-orange-50 text-orange-700' }
       ],
       stats: [
         { label: 'Active Clients', value: '12', change: '+2 this month', trend: 'up' },
@@ -47,9 +54,10 @@ export default function Dashboard() {
       title: 'Content Performance Dashboard',
       subtitle: 'Track your brand\'s content ecosystem',
       quickActions: [
-        { title: 'Review Drafts', desc: '3 pieces pending approval', icon: FileText, href: '/content', color: 'bg-amber-50 text-amber-700' },
-        { title: 'View Calendar', desc: 'See upcoming content', icon: Calendar, href: '/channels', color: 'bg-blue-50 text-blue-700' },
-        { title: 'Performance', desc: 'Latest metrics & insights', icon: TrendingUp, href: '/analytics', color: 'bg-green-50 text-green-700' }
+        { title: 'Review Content', desc: '3 pieces pending approval', icon: Eye, href: '/content', color: 'bg-amber-50 text-amber-700' },
+        { title: 'Content Calendar', desc: 'View scheduled posts', icon: Calendar, href: '/channels', color: 'bg-blue-50 text-blue-700' },
+        { title: 'Performance Report', desc: 'Latest metrics & ROI', icon: TrendingUp, href: '/analytics', color: 'bg-green-50 text-green-700' },
+        { title: 'Brand Guidelines', desc: 'Access your brand profile', icon: FileText, href: '/personal-brands', color: 'bg-purple-50 text-purple-700' }
       ],
       stats: [
         { label: 'Posts This Month', value: '24', change: 'On schedule', trend: 'up' },
@@ -62,9 +70,10 @@ export default function Dashboard() {
       title: 'Pipeline Dashboard',
       subtitle: 'Convert content signals into revenue',
       quickActions: [
-        { title: 'Lead Queue', desc: '8 high-intent prospects', icon: Target, href: '/pipeline', color: 'bg-red-50 text-red-700' },
-        { title: 'Task Briefs', desc: 'Follow up on warm leads', icon: Users, href: '/pipeline', color: 'bg-blue-50 text-blue-700' },
-        { title: 'Performance', desc: 'Track conversion metrics', icon: BarChart3, href: '/analytics', color: 'bg-green-50 text-green-700' }
+        { title: 'Hot Prospects', desc: '8 high-intent leads ready', icon: Target, href: '/crm', color: 'bg-red-50 text-red-700' },
+        { title: 'Pipeline Review', desc: 'Manage active opportunities', icon: BarChart3, href: '/pipeline', color: 'bg-blue-50 text-blue-700' },
+        { title: 'CRM Database', desc: 'Update contact records', icon: Users, href: '/crm', color: 'bg-green-50 text-green-700' },
+        { title: 'Lead Magnets', desc: 'Download performance data', icon: Download, href: '/lead-magnets', color: 'bg-purple-50 text-purple-700' }
       ],
       stats: [
         { label: 'Active Leads', value: '47', change: '+12 this week', trend: 'up' },
@@ -77,10 +86,10 @@ export default function Dashboard() {
       title: 'Executive Dashboard',
       subtitle: 'Oversee content operations & growth',
       quickActions: [
-        { title: 'Team Performance', desc: 'Monitor strategist metrics', icon: Users, href: '/team', color: 'bg-purple-50 text-purple-700' },
-        { title: 'Client Overview', desc: 'Portfolio health check', icon: BarChart3, href: '/analytics', color: 'bg-blue-50 text-blue-700' },
-        { title: 'Revenue Impact', desc: 'Content ROI analysis', icon: TrendingUp, href: '/analytics', color: 'bg-green-50 text-green-700' },
-        { title: 'System Settings', desc: 'Configure modules & permissions', icon: Zap, href: '/settings', color: 'bg-orange-50 text-orange-700' }
+        { title: 'Team Dashboard', desc: 'Monitor strategist performance', icon: Users, href: '/team', color: 'bg-purple-50 text-purple-700' },
+        { title: 'Revenue Analytics', desc: 'Client portfolio overview', icon: TrendingUp, href: '/analytics', color: 'bg-green-50 text-green-700' },
+        { title: 'Digital Twins', desc: 'AI strategy consultants', icon: Bot, href: '/digital-twins', color: 'bg-blue-50 text-blue-700' },
+        { title: 'System Settings', desc: 'Configure workspace', icon: Settings, href: '/settings', color: 'bg-orange-50 text-orange-700' }
       ],
       stats: [
         { label: 'Monthly Revenue', value: '$127K', change: '+18% growth', trend: 'up' },
