@@ -330,4 +330,4 @@ async function generateContent(systemPrompt: string, userPrompt: string) {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     }
   );
-});
+}
