@@ -42,7 +42,14 @@ interface WorkspaceContextType {
     audience?: string;
     brandVoice?: string;
     context?: string;
+    clientName?: string;
+    transcript?: string;
+    useStructuredPrompt?: boolean;
   }) => Promise<string>;
+  addToneOfVoice: (toneOfVoice: string) => Promise<void>;
+  addPreviousPost: (post: string) => Promise<void>;
+  getPreviousPosts: () => WorkspaceContext[];
+  getToneOfVoice: () => WorkspaceContext | null;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -251,21 +258,90 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     audience?: string;
     brandVoice?: string;
     context?: string;
+    clientName?: string;
+    transcript?: string;
+    useStructuredPrompt?: boolean;
   }): Promise<string> => {
     try {
+      // Get previous posts and tone of voice from workspace context
+      const previousPosts = getPreviousPosts().map(ctx => ctx.content);
+      const toneOfVoiceContext = getToneOfVoice();
+      const brandVoice = options?.brandVoice || toneOfVoiceContext?.content;
+
       const { data, error } = await supabase.functions.invoke('claude-copywriter', {
         body: {
           prompt,
-          ...options
+          previousPosts: previousPosts.length > 0 ? previousPosts : undefined,
+          ...options,
+          brandVoice
         }
       });
 
       if (error) throw error;
+      
+      // Store the generated content in workspace context
+      if (currentWorkspace && user) {
+        await addContext({
+          workspace_id: currentWorkspace.id,
+          context_type: 'generated_content',
+          title: `Generated ${options?.type || 'content'} - ${new Date().toISOString()}`,
+          content: data.copy,
+          metadata: { 
+            prompt, 
+            ...options,
+            generatedAt: new Date().toISOString(),
+            characterCount: data.metadata?.characterCount,
+            wordCount: data.metadata?.wordCount
+          },
+          tags: [options?.type || 'content', 'generated']
+        });
+      }
+
       return data.copy;
     } catch (error) {
       console.error('Error generating copy:', error);
       throw error;
     }
+  };
+
+  const addToneOfVoice = async (toneOfVoice: string) => {
+    if (!currentWorkspace || !user) return;
+
+    // Remove existing tone of voice
+    const existingTone = getToneOfVoice();
+    if (existingTone) {
+      await supabase.from('workspace_context').delete().eq('id', existingTone.id);
+    }
+
+    await addContext({
+      workspace_id: currentWorkspace.id,
+      context_type: 'tone_of_voice',
+      title: 'Brand Tone of Voice',
+      content: toneOfVoice,
+      metadata: { updatedAt: new Date().toISOString() },
+      tags: ['brand', 'tone', 'voice']
+    });
+  };
+
+  const addPreviousPost = async (post: string) => {
+    if (!currentWorkspace || !user) return;
+
+    await addContext({
+      workspace_id: currentWorkspace.id,
+      context_type: 'previous_post',
+      title: `Previous Post - ${new Date().toLocaleDateString()}`,
+      content: post,
+      metadata: { addedAt: new Date().toISOString() },
+      tags: ['post', 'reference', 'example']
+    });
+  };
+
+  const getPreviousPosts = (): WorkspaceContext[] => {
+    return workspaceContext.filter(ctx => ctx.context_type === 'previous_post');
+  };
+
+  const getToneOfVoice = (): WorkspaceContext | null => {
+    return workspaceContext.find(ctx => ctx.context_type === 'tone_of_voice') || null;
   };
 
   return (
@@ -281,6 +357,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       addContext,
       enhanceContent,
       generateCopy,
+      addToneOfVoice,
+      addPreviousPost,
+      getPreviousPosts,
+      getToneOfVoice,
     }}>
       {children}
     </WorkspaceContext.Provider>

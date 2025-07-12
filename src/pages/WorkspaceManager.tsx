@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useContent } from '@/contexts/ContentContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +22,22 @@ export default function WorkspaceManager() {
     updateWorkspace,
     deleteWorkspace,
     generateCopy,
-    enhanceContent 
+    enhanceContent,
+    addToneOfVoice,
+    addPreviousPost,
+    getPreviousPosts,
+    getToneOfVoice
   } = useWorkspace();
+  
+  const { sources } = useContent();
   
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCopywriterDialog, setShowCopywriterDialog] = useState(false);
   const [showEnhancerDialog, setShowEnhancerDialog] = useState(false);
+  const [showLinkedInDialog, setShowLinkedInDialog] = useState(false);
+  const [showToneDialog, setShowToneDialog] = useState(false);
+  const [showPostDialog, setShowPostDialog] = useState(false);
   
   const [newWorkspace, setNewWorkspace] = useState({ name: '', description: '' });
   const [copyRequest, setCopyRequest] = useState({
@@ -43,6 +53,13 @@ export default function WorkspaceManager() {
     content: '',
     action: 'enhance' as const
   });
+  const [linkedInRequest, setLinkedInRequest] = useState({
+    clientName: '',
+    transcript: '',
+    selectedSource: ''
+  });
+  const [toneOfVoice, setToneOfVoiceState] = useState('');
+  const [previousPost, setPreviousPost] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -108,6 +125,78 @@ export default function WorkspaceManager() {
     }
   };
 
+  const handleGenerateLinkedInPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkedInRequest.clientName.trim() || !linkedInRequest.transcript.trim()) return;
+
+    setIsGenerating(true);
+    try {
+      const result = await generateCopy('Generate a LinkedIn post from this transcript', {
+        type: 'linkedin_post',
+        clientName: linkedInRequest.clientName,
+        transcript: linkedInRequest.transcript,
+        useStructuredPrompt: true
+      });
+      setGeneratedContent(result);
+      toast({
+        title: "LinkedIn Post Generated!",
+        description: "Your LinkedIn post has been generated using the structured prompt.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate LinkedIn post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveToneOfVoice = async () => {
+    if (!toneOfVoice.trim()) return;
+    
+    try {
+      await addToneOfVoice(toneOfVoice);
+      setToneOfVoiceState('');
+      setShowToneDialog(false);
+      toast({
+        title: "Tone of Voice Saved!",
+        description: "Your brand tone of voice has been saved to the workspace.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save tone of voice.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddPreviousPost = async () => {
+    if (!previousPost.trim()) return;
+    
+    try {
+      await addPreviousPost(previousPost);
+      setPreviousPost('');
+      setShowPostDialog(false);
+      toast({
+        title: "Previous Post Added!",
+        description: "The post has been added as reference material.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add previous post.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Get current tone of voice and previous posts
+  const currentTone = getToneOfVoice();
+  const previousPosts = getPreviousPosts();
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
@@ -116,6 +205,121 @@ export default function WorkspaceManager() {
           <p className="text-muted-foreground">Manage your workspaces and leverage Claude AI for copywriting and content enhancement</p>
         </div>
         <div className="flex gap-2">
+          <Dialog open={showLinkedInDialog} onOpenChange={setShowLinkedInDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Sparkles className="h-4 w-4 mr-2" />
+                LinkedIn Post Generator
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Advanced LinkedIn Post Generator</DialogTitle>
+                <DialogDescription>Generate high-quality LinkedIn posts using transcript analysis and structured prompts</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleGenerateLinkedInPost} className="space-y-4">
+                <Input
+                  placeholder="Client name"
+                  value={linkedInRequest.clientName}
+                  onChange={(e) => setLinkedInRequest(prev => ({ ...prev, clientName: e.target.value }))}
+                  required
+                />
+                <div>
+                  <label className="text-sm font-medium">Select Source (Optional)</label>
+                  <Select value={linkedInRequest.selectedSource} onValueChange={(value) => {
+                    setLinkedInRequest(prev => ({ ...prev, selectedSource: value }));
+                    const selectedSource = sources.find(s => s.id === value);
+                    if (selectedSource) {
+                      setLinkedInRequest(prev => ({ ...prev, transcript: selectedSource.content }));
+                    }
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a source to use as transcript" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sources.map((source) => (
+                        <SelectItem key={source.id} value={source.id}>
+                          {source.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Textarea
+                  placeholder="Paste your transcript here..."
+                  value={linkedInRequest.transcript}
+                  onChange={(e) => setLinkedInRequest(prev => ({ ...prev, transcript: e.target.value }))}
+                  rows={8}
+                  required
+                />
+                <div className="bg-muted p-3 rounded-md text-sm">
+                  <strong>Using:</strong> {previousPosts.length} previous posts, {currentTone ? 'custom tone of voice' : 'default tone'}
+                </div>
+                <Button type="submit" disabled={isGenerating} className="w-full">
+                  {isGenerating ? "Generating LinkedIn Post..." : "Generate LinkedIn Post"}
+                </Button>
+              </form>
+              {generatedContent && (
+                <div className="mt-4 p-4 bg-muted rounded-md">
+                  <h4 className="font-medium mb-2">Generated LinkedIn Post:</h4>
+                  <div className="whitespace-pre-wrap text-sm">{generatedContent}</div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showToneDialog} onOpenChange={setShowToneDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                {currentTone ? 'Update' : 'Set'} Tone of Voice
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Brand Tone of Voice</DialogTitle>
+                <DialogDescription>Define your brand's tone of voice for consistent content generation</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Describe your brand's tone of voice, communication style, and personality..."
+                  value={toneOfVoice || currentTone?.content || ''}
+                  onChange={(e) => setToneOfVoiceState(e.target.value)}
+                  rows={8}
+                />
+                <Button onClick={handleSaveToneOfVoice} className="w-full">
+                  Save Tone of Voice
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
+                Add Reference Post
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Add Previous Post</DialogTitle>
+                <DialogDescription>Add a previous post as reference material for style consistency</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Paste a previous post that represents your style..."
+                  value={previousPost}
+                  onChange={(e) => setPreviousPost(e.target.value)}
+                  rows={8}
+                />
+                <Button onClick={handleAddPreviousPost} className="w-full">
+                  Add Reference Post
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={showCopywriterDialog} onOpenChange={setShowCopywriterDialog}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -339,6 +543,40 @@ export default function WorkspaceManager() {
 
         <div>
           <Card>
+            <CardHeader>
+              <CardTitle>Workspace Settings</CardTitle>
+              <CardDescription>Manage your workspace configuration and AI settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Current Tone of Voice</h4>
+                  {currentTone ? (
+                    <div className="p-3 bg-muted rounded-md text-sm">
+                      {currentTone.content.substring(0, 200)}...
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No tone of voice set</p>
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Reference Posts ({previousPosts.length})</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {previousPosts.slice(0, 3).map((post) => (
+                      <div key={post.id} className="p-2 bg-muted rounded-md text-xs">
+                        {post.content.substring(0, 100)}...
+                      </div>
+                    ))}
+                    {previousPosts.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No reference posts added</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
             <CardHeader>
               <CardTitle>Workspace Context</CardTitle>
               <CardDescription>AI conversation history and insights</CardDescription>
