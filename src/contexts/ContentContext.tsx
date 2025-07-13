@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { ContentSource, ContentPiece } from '@/types/content';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePersonalBrand } from './PersonalBrandContext';
+import { useWorkspace } from './WorkspaceContext';
 
 interface ContentContextType {
   sources: ContentSource[];
@@ -31,6 +33,8 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
   const [pieces, setPieces] = useState<ContentPiece[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { currentPersonalBrand } = usePersonalBrand();
+  const { currentWorkspace } = useWorkspace();
 
   useEffect(() => {
     fetchData();
@@ -146,22 +150,6 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get current workspace and personal brand from context
-      const { data: workspaces } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      const { data: personalBrands } = await supabase
-        .from('personal_brands')
-        .select('id, workspace_id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      const workspaceId = workspaces?.[0]?.id || null;
-      const personalBrandId = personalBrands?.[0]?.id || null;
-
       const { data, error } = await supabase
         .from('content_pieces')
         .insert({
@@ -172,8 +160,8 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
           tags: pieceData.tags,
           status: pieceData.status,
           user_id: user.id,
-          workspace_id: workspaceId,
-          personal_brand_id: personalBrandId
+          workspace_id: currentWorkspace?.id || null,
+          personal_brand_id: currentPersonalBrand?.id || null
         })
         .select()
         .single();
