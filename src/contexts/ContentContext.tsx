@@ -146,6 +146,22 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Get current workspace and personal brand from context
+      const { data: workspaces } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      const { data: personalBrands } = await supabase
+        .from('personal_brands')
+        .select('id, workspace_id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      const workspaceId = workspaces?.[0]?.id || null;
+      const personalBrandId = personalBrands?.[0]?.id || null;
+
       const { data, error } = await supabase
         .from('content_pieces')
         .insert({
@@ -155,7 +171,9 @@ export const ContentProvider = ({ children }: { children: ReactNode }) => {
           source_ids: pieceData.sourceIds,
           tags: pieceData.tags,
           status: pieceData.status,
-          user_id: user.id
+          user_id: user.id,
+          workspace_id: workspaceId,
+          personal_brand_id: personalBrandId
         })
         .select()
         .single();
