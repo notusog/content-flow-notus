@@ -82,13 +82,18 @@ ${formData.transcript ? 'Extract the most compelling insights from the transcrip
         body: {
           prompt: contentPrompt,
           tone: formData.tone,
-          platform: formData.platform
+          type: 'linkedin_post', // Match the expected parameter
+          transcript: formData.transcript,
+          useStructuredPrompt: true, // Use the sophisticated LinkedIn prompt
+          clientName: brandName || 'the client'
         }
       });
 
       if (error) throw error;
 
-      setGeneratedContent(data.content);
+      // The function returns 'copy' not 'content'
+      const generatedText = data?.copy || data?.content || '';
+      setGeneratedContent(generatedText);
 
       toast({
         title: "Content Generated",
