@@ -10,12 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ContentGenerationData {
-  prompt: string;
   transcript: string;
-  platform: string;
-  contentType: string;
-  tone: string;
-  length: string;
+  context?: string;
 }
 
 interface TranscriptContentGeneratorProps {
@@ -34,20 +30,16 @@ export default function TranscriptContentGenerator({
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState<ContentGenerationData>({
-    prompt: '',
     transcript: '',
-    platform: 'LinkedIn',
-    contentType: 'post',
-    tone: 'professional',
-    length: 'medium'
+    context: ''
   });
   const [generatedContent, setGeneratedContent] = useState('');
 
   const generateContent = async () => {
-    if (!formData.prompt && !formData.transcript) {
+    if (!formData.transcript) {
       toast({
-        title: "Missing Information",
-        description: "Please provide either a prompt or transcript",
+        title: "Missing Transcript",
+        description: "Please provide a transcript to generate LinkedIn content",
         variant: "destructive",
       });
       return;
@@ -56,48 +48,25 @@ export default function TranscriptContentGenerator({
     setIsGenerating(true);
     
     try {
-      const contentPrompt = `You are a content creator for ${brandName || 'the brand'}. Generate ${formData.contentType} content for ${formData.platform}.
-
-${contentArchetype ? `Brand Content Archetype:\n${contentArchetype}\n\n` : ''}
-
-Content Requirements:
-- Platform: ${formData.platform}
-- Type: ${formData.contentType}
-- Tone: ${formData.tone}
-- Length: ${formData.length}
-
-${formData.prompt ? `Content Brief:\n${formData.prompt}\n\n` : ''}
-
-${formData.transcript ? `Source Transcript:\n${formData.transcript}\n\n` : ''}
-
-Generate engaging ${formData.platform} content that:
-1. Matches the brand voice and archetype
-2. Provides value to the target audience
-3. Is optimized for ${formData.platform} engagement
-4. Follows ${formData.platform} best practices
-
-${formData.transcript ? 'Extract the most compelling insights from the transcript and turn them into engaging content.' : ''}`;
-
       const { data, error } = await supabase.functions.invoke('claude-copywriter', {
         body: {
-          prompt: contentPrompt,
-          tone: formData.tone,
-          type: 'linkedin_post', // Match the expected parameter
+          prompt: formData.context || '',
+          tone: 'professional',
+          type: 'linkedin_post',
           transcript: formData.transcript,
-          useStructuredPrompt: true, // Use the sophisticated LinkedIn prompt
+          useStructuredPrompt: true,
           clientName: brandName || 'the client'
         }
       });
 
       if (error) throw error;
 
-      // The function returns 'copy' not 'content'
       const generatedText = data?.copy || data?.content || '';
       setGeneratedContent(generatedText);
 
       toast({
-        title: "Content Generated",
-        description: `Generated ${formData.contentType} for ${formData.platform}`,
+        title: "LinkedIn Post Generated",
+        description: "Successfully generated LinkedIn content from transcript",
       });
 
     } catch (error) {
@@ -125,12 +94,11 @@ ${formData.transcript ? 'Extract the most compelling insights from the transcrip
     onSubmit({
       content: generatedContent,
       metadata: {
-        platform: formData.platform,
-        contentType: formData.contentType,
-        tone: formData.tone,
-        length: formData.length,
-        hasTranscript: !!formData.transcript,
-        prompt: formData.prompt
+        platform: 'LinkedIn',
+        contentType: 'post',
+        tone: 'professional',
+        hasTranscript: true,
+        context: formData.context
       }
     });
   };
@@ -141,138 +109,69 @@ ${formData.transcript ? 'Extract the most compelling insights from the transcrip
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
-            AI Content Generator
+            LinkedIn Post Generator
             {brandName && <Badge variant="secondary">{brandName}</Badge>}
           </CardTitle>
           <CardDescription>
-            Generate content using prompts and transcripts with your brand archetype
+            Generate LinkedIn posts from transcripts with optional context
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Input Section */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Mic className="h-4 w-4 text-muted-foreground" />
+                  Transcript (Required)
+                </CardTitle>
+                <CardDescription>
+                  Paste transcript from calls, podcasts, or videos to generate LinkedIn content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={formData.transcript}
+                  onChange={(e) => setFormData(prev => ({ ...prev, transcript: e.target.value }))}
+                  placeholder="Paste your transcript here..."
+                  rows={8}
+                  className="min-h-[200px]"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                  Additional Context (Optional)
+                </CardTitle>
+                <CardDescription>
+                  Add any specific angle, key points, or direction for the LinkedIn post
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  value={formData.context || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, context: e.target.value }))}
+                  placeholder="e.g., Focus on the leadership insights, highlight the data points, emphasize the practical tips..."
+                  rows={3}
+                />
+              </CardContent>
+            </Card>
+
+            {contentArchetype && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Target className="h-4 w-4 text-muted-foreground" />
-                    Content Brief
-                  </CardTitle>
+                  <CardTitle className="text-sm">Brand Archetype Active</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={formData.prompt}
-                    onChange={(e) => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
-                    placeholder="Describe the content you want to create..."
-                    rows={4}
-                  />
+                  <Badge variant="outline" className="text-xs">
+                    LinkedIn post will be generated using your brand voice and strategy
+                  </Badge>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Mic className="h-4 w-4 text-muted-foreground" />
-                    Transcript Source
-                  </CardTitle>
-                  <CardDescription>
-                    Paste transcript from calls, podcasts, or videos
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={formData.transcript}
-                    onChange={(e) => setFormData(prev => ({ ...prev, transcript: e.target.value }))}
-                    placeholder="Paste your transcript here..."
-                    rows={6}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Content Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Platform</label>
-                      <Select value={formData.platform} onValueChange={(value) => setFormData(prev => ({ ...prev, platform: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="Instagram">Instagram</SelectItem>
-                          <SelectItem value="YouTube">YouTube</SelectItem>
-                          <SelectItem value="TikTok">TikTok</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Content Type</label>
-                      <Select value={formData.contentType} onValueChange={(value) => setFormData(prev => ({ ...prev, contentType: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="post">Social Post</SelectItem>
-                          <SelectItem value="article">Article</SelectItem>
-                          <SelectItem value="newsletter">Newsletter</SelectItem>
-                          <SelectItem value="script">Video Script</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Tone</label>
-                      <Select value={formData.tone} onValueChange={(value) => setFormData(prev => ({ ...prev, tone: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="conversational">Conversational</SelectItem>
-                          <SelectItem value="inspiring">Inspiring</SelectItem>
-                          <SelectItem value="educational">Educational</SelectItem>
-                          <SelectItem value="casual">Casual</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Length</label>
-                      <Select value={formData.length} onValueChange={(value) => setFormData(prev => ({ ...prev, length: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="short">Short</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="long">Long</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {contentArchetype && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Content Archetype Active</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Badge variant="outline" className="text-xs">
-                      Brand strategy will guide content generation
-                    </Badge>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            )}
           </div>
 
           <Separator />
@@ -283,7 +182,7 @@ ${formData.transcript ? 'Extract the most compelling insights from the transcrip
               <h3 className="text-lg font-medium">Generated Content</h3>
               <Button 
                 onClick={generateContent}
-                disabled={isGenerating || (!formData.prompt && !formData.transcript)}
+                disabled={isGenerating || !formData.transcript}
               >
                 {isGenerating ? (
                   <>
